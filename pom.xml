@@ -13,6 +13,7 @@
     <slf4j-log4j12.version>1.7.32</slf4j-log4j12.version>
     <maven-assembly.version>3.1.1</maven-assembly.version>
     <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
+    <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
   </properties>
   <dependencies>
     <dependency>
@@ -75,6 +76,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
+        <version>${maven-jar-plugin.version}</version>
         <configuration>
           <archive>
             <manifest>
