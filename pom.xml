@@ -12,11 +12,6 @@
     <logback-classic.version>1.2.5</logback-classic.version>
     <slf4j-log4j12.version>1.7.32</slf4j-log4j12.version>
     <maven-assembly.version>3.1.1</maven-assembly.version>
-    <maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
-    <maven-checkstyle-plugin.version>3.1.0</maven-checkstyle-plugin.version>
-    <checkstyle.version>8.29</checkstyle.version>
-    <checkstyle-rules.version>4.0.1</checkstyle-rules.version>
-    <maven-surefire-plugin.version>3.0.0-M4</maven-surefire-plugin.version>
     <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
   </properties>
   <dependencies>
