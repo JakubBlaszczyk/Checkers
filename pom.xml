@@ -10,6 +10,7 @@
     <junit.version>5.6.0</junit.version>
     <lombok.version>1.18.22</lombok.version>
     <logback-classic.version>1.2.5</logback-classic.version>
+    <slf4j-log4j12.version>1.7.32</slf4j-log4j12.version>
     <maven-assembly.version>3.1.1</maven-assembly.version>
     <maven-enforcer-plugin.version>3.0.0-M3</maven-enforcer-plugin.version>
     <maven-checkstyle-plugin.version>3.1.0</maven-checkstyle-plugin.version>
@@ -40,7 +41,12 @@
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
       <version>${logback-classic.version}</version>
-  </dependency>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>${slf4j-log4j12.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <finalName>checkers</finalName>
@@ -50,6 +56,13 @@
         <artifactId>maven-assembly-plugin</artifactId>
         <version>${maven-assembly.version}</version>
         <configuration>
+          <archive>
+            <manifest>
+              <mainClass>
+                    com.pk.App
+                </mainClass>
+            </manifest>
+          </archive>
           <descriptorRefs>
             <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
