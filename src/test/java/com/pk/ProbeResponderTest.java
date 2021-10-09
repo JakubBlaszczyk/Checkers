@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 /**
- * Unit test for thread responding to probe beacons.
+ * Unit tests for thread responding to probe beacons.
  */
 public class ProbeResponderTest {
   private Method recvMsgMethod;
