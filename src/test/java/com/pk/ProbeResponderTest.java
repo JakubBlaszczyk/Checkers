@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -39,22 +40,13 @@ public class ProbeResponderTest {
 
   @Test
   void testCorrectBeacon() throws Exception {
-    InetAddress hostAddress = InetAddress.getByName("255.255.255.255");
     byte[] buf = "checkers:probe".getBytes();
     DatagramPacket dp = new DatagramPacket(buf, buf.length);
-    DatagramPacket receivedPacket = new DatagramPacket(new byte[200], 200);
 
-    doAnswer(invocation -> {
-      Object[] args = invocation.getArguments();
-      ((DatagramPacket) args[0]).setLength(buf.length);
-      ((DatagramPacket) args[0]).setData(buf);
-      ((DatagramPacket) args[0]).setAddress(hostAddress);
-      ((DatagramPacket) args[0]).setPort(10000);
-      return null;
-    }).when(mockedSocket).receive(any(DatagramPacket.class));
+    modifyAnswer(buf);
 
-    mockedSocket.receive(receivedPacket);
-    System.out.println("Data: " + new String(receivedPacket.getData()));
+    mockedSocket.receive(dp);
+    System.out.println("Data: " + new String(dp.getData()));
 
     String msg = (String) recvMsgMethod.invoke(pResponder, mockedSocket);
     assertEquals("checkers:probe", msg);
@@ -63,28 +55,19 @@ public class ProbeResponderTest {
     String validResponse = String.format("checkers:probeResp %s %s", pResponder.getNick(), pResponder.getProfileImg());
     assertTrue(Arrays.equals(validResponse.getBytes(), dp.getData()));
     assertEquals(10000, dp.getPort());
-    assertEquals(hostAddress, dp.getAddress());
+    assertEquals(InetAddress.getByName("255.255.255.255"), dp.getAddress());
     assertEquals(validResponse.length(), dp.getLength());
   }
 
   @Test
   void testIncompleteCommand() throws Exception {
-    InetAddress hostAddress = InetAddress.getByName("255.255.255.255");
     byte[] buf = "check".getBytes();
     DatagramPacket dp = new DatagramPacket(buf, buf.length);
-    DatagramPacket receivedPacket = new DatagramPacket(new byte[200], 200);
 
-    doAnswer(invocation -> {
-      Object[] args = invocation.getArguments();
-      ((DatagramPacket) args[0]).setLength(buf.length);
-      ((DatagramPacket) args[0]).setData(buf);
-      ((DatagramPacket) args[0]).setAddress(hostAddress);
-      ((DatagramPacket) args[0]).setPort(10000);
-      return null;
-    }).when(mockedSocket).receive(any(DatagramPacket.class));
+    modifyAnswer(buf);
 
-    mockedSocket.receive(receivedPacket);
-    System.out.println("Data: " + new String(receivedPacket.getData()));
+    mockedSocket.receive(dp);
+    System.out.println("Data: " + new String(dp.getData()));
 
     String msg = (String) recvMsgMethod.invoke(pResponder, mockedSocket);
     assertEquals("check", msg);
@@ -95,22 +78,13 @@ public class ProbeResponderTest {
 
   @Test
   void testIncompleteCommand2() throws Exception {
-    InetAddress hostAddress = InetAddress.getByName("255.255.255.255");
     byte[] buf = "checkers:pro".getBytes();
     DatagramPacket dp = new DatagramPacket(buf, buf.length);
-    DatagramPacket receivedPacket = new DatagramPacket(new byte[200], 200);
 
-    doAnswer(invocation -> {
-      Object[] args = invocation.getArguments();
-      ((DatagramPacket) args[0]).setLength(buf.length);
-      ((DatagramPacket) args[0]).setData(buf);
-      ((DatagramPacket) args[0]).setAddress(hostAddress);
-      ((DatagramPacket) args[0]).setPort(10000);
-      return null;
-    }).when(mockedSocket).receive(any(DatagramPacket.class));
+    modifyAnswer(buf);
 
-    mockedSocket.receive(receivedPacket);
-    System.out.println("Data: " + new String(receivedPacket.getData()));
+    mockedSocket.receive(dp);
+    System.out.println("Data: " + new String(dp.getData()));
 
     String msg = (String) recvMsgMethod.invoke(pResponder, mockedSocket);
     assertEquals("checkers:pro", msg);
@@ -121,22 +95,13 @@ public class ProbeResponderTest {
 
   @Test
   void testTooLongBeacon() throws Exception {
-    InetAddress hostAddress = InetAddress.getByName("255.255.255.255");
     byte[] buf = "checkers:probe   sad as sad asd as asd".getBytes();
     DatagramPacket dp = new DatagramPacket(buf, buf.length);
-    DatagramPacket receivedPacket = new DatagramPacket(new byte[200], 200);
 
-    doAnswer(invocation -> {
-      Object[] args = invocation.getArguments();
-      ((DatagramPacket) args[0]).setLength(buf.length);
-      ((DatagramPacket) args[0]).setData(buf);
-      ((DatagramPacket) args[0]).setAddress(hostAddress);
-      ((DatagramPacket) args[0]).setPort(10000);
-      return null;
-    }).when(mockedSocket).receive(any(DatagramPacket.class));
+    modifyAnswer(buf);
 
-    mockedSocket.receive(receivedPacket);
-    System.out.println("Data: " + new String(receivedPacket.getData()));
+    mockedSocket.receive(dp);
+    System.out.println("Data: " + new String(dp.getData()));
 
     String msg = (String) recvMsgMethod.invoke(pResponder, mockedSocket);
     assertEquals("checkers:probe   sad as sad asd as asd", msg);
@@ -147,19 +112,11 @@ public class ProbeResponderTest {
 
   @Test
   void testTooLongBeacon2() throws Exception {
-    InetAddress hostAddress = InetAddress.getByName("255.255.255.255");
     byte[] buf = "checkers:probes".getBytes();
     DatagramPacket dp = new DatagramPacket(buf, buf.length);
     DatagramPacket receivedPacket = new DatagramPacket(new byte[200], 200);
 
-    doAnswer(invocation -> {
-      Object[] args = invocation.getArguments();
-      ((DatagramPacket) args[0]).setLength(buf.length);
-      ((DatagramPacket) args[0]).setData(buf);
-      ((DatagramPacket) args[0]).setAddress(hostAddress);
-      ((DatagramPacket) args[0]).setPort(10000);
-      return null;
-    }).when(mockedSocket).receive(any(DatagramPacket.class));
+    modifyAnswer(buf);
 
     mockedSocket.receive(receivedPacket);
     System.out.println("Data: " + new String(receivedPacket.getData()));
@@ -169,5 +126,17 @@ public class ProbeResponderTest {
 
     dp = (DatagramPacket) prepareResponseMethod.invoke(pResponder, msg);
     assertEquals(null, dp);
+  }
+
+  private void modifyAnswer(byte[] buf) throws IOException {
+    InetAddress hostAddress = InetAddress.getByName("255.255.255.255");
+    doAnswer(invocation -> {
+      Object[] args = invocation.getArguments();
+      ((DatagramPacket) args[0]).setLength(buf.length);
+      ((DatagramPacket) args[0]).setData(buf);
+      ((DatagramPacket) args[0]).setAddress(hostAddress);
+      ((DatagramPacket) args[0]).setPort(10000);
+      return null;
+    }).when(mockedSocket).receive(any(DatagramPacket.class));
   }
 }
