@@ -14,6 +14,8 @@
     <maven-assembly.version>3.1.1</maven-assembly.version>
     <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
     <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
+    <mockito-core.version>3.2.0</mockito-core.version>
+    <powermock.version>1.6.6</powermock.version>
   </properties>
   <dependencies>
     <dependency>
@@ -43,6 +45,13 @@
       <artifactId>slf4j-log4j12</artifactId>
       <version>${slf4j-log4j12.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito-core.version}</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
   <build>
     <finalName>checkers</finalName>
