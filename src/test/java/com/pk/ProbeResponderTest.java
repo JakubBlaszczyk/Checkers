@@ -17,6 +17,8 @@ import com.pk.server.ProbeResponder;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 /**
@@ -59,9 +61,11 @@ public class ProbeResponderTest {
     assertEquals(validResponse.length(), dp.getLength());
   }
 
-  @Test
-  void testIncompleteCommand() throws Exception {
-    byte[] buf = "check".getBytes();
+
+  @ParameterizedTest
+  @ValueSource(strings = {"check", "checkers:pro", "checkers:probe   sad as sad asd as asd", "checkers:probes"})
+  void testInvalidBeacons(String str) throws Exception {
+    byte[] buf = str.getBytes();
     DatagramPacket dp = new DatagramPacket(buf, buf.length);
 
     modifyAnswer(buf);
@@ -70,59 +74,7 @@ public class ProbeResponderTest {
     System.out.println("Data: " + new String(dp.getData()));
 
     String msg = (String) recvMsgMethod.invoke(pResponder, mockedSocket);
-    assertEquals("check", msg);
-
-    dp = (DatagramPacket) prepareResponseMethod.invoke(pResponder, msg);
-    assertEquals(null, dp);
-  }
-
-  @Test
-  void testIncompleteCommand2() throws Exception {
-    byte[] buf = "checkers:pro".getBytes();
-    DatagramPacket dp = new DatagramPacket(buf, buf.length);
-
-    modifyAnswer(buf);
-
-    mockedSocket.receive(dp);
-    System.out.println("Data: " + new String(dp.getData()));
-
-    String msg = (String) recvMsgMethod.invoke(pResponder, mockedSocket);
-    assertEquals("checkers:pro", msg);
-
-    dp = (DatagramPacket) prepareResponseMethod.invoke(pResponder, msg);
-    assertEquals(null, dp);
-  }
-
-  @Test
-  void testTooLongBeacon() throws Exception {
-    byte[] buf = "checkers:probe   sad as sad asd as asd".getBytes();
-    DatagramPacket dp = new DatagramPacket(buf, buf.length);
-
-    modifyAnswer(buf);
-
-    mockedSocket.receive(dp);
-    System.out.println("Data: " + new String(dp.getData()));
-
-    String msg = (String) recvMsgMethod.invoke(pResponder, mockedSocket);
-    assertEquals("checkers:probe   sad as sad asd as asd", msg);
-
-    dp = (DatagramPacket) prepareResponseMethod.invoke(pResponder, msg);
-    assertEquals(null, dp);
-  }
-
-  @Test
-  void testTooLongBeacon2() throws Exception {
-    byte[] buf = "checkers:probes".getBytes();
-    DatagramPacket dp = new DatagramPacket(buf, buf.length);
-    DatagramPacket receivedPacket = new DatagramPacket(new byte[200], 200);
-
-    modifyAnswer(buf);
-
-    mockedSocket.receive(receivedPacket);
-    System.out.println("Data: " + new String(receivedPacket.getData()));
-
-    String msg = (String) recvMsgMethod.invoke(pResponder, mockedSocket);
-    assertEquals("checkers:probes", msg);
+    assertEquals(str, msg);
 
     dp = (DatagramPacket) prepareResponseMethod.invoke(pResponder, msg);
     assertEquals(null, dp);
