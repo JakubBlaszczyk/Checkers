@@ -1,4 +1,4 @@
-package com.pk;
+package com.pk.Server;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -24,7 +24,7 @@ import org.mockito.Mockito;
 /**
  * Unit tests for thread responding to probe beacons.
  */
-public class ProbeResponderTest {
+public class BasicProbeResponderTest {
   private Method recvMsgMethod;
   private Method prepareResponseMethod;
   private ProbeResponder pResponder;
