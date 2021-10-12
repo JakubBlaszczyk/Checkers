@@ -1,6 +1,9 @@
 package com.pk.logic;
 
 import java.util.List;
+
+import javax.management.openmbean.ArrayType;
+
 import java.util.ArrayList;
 
 import com.pk.logic.exceptions.MandatoryKillMove;
@@ -22,6 +25,39 @@ public class BasicLogic implements Logic {
 
   public void update(List<List<Piece>> board)
       throws MandatoryKillMove, VerticalOrHorizontalMove, MoreThanOneMoveMade, MoveOnAlreadyTakenSpace {
+    ArrayList<PiecePosition> white = findAllWhite(board);
+    ArrayList<PiecePosition> black = findAllBlack(board);
+    ArrayList<Integer> positions;
+    try {
+      positions = isOneProperMove(board);
+      isNonDiagonalMove(white, black);
+    } catch (MoreThanOneMoveMade e) {
+      throw new MoreThanOneMoveMade();
+    } catch (VerticalOrHorizontalMove e) {
+      throw new VerticalOrHorizontalMove(e.getMessage());
+    } catch (MoveOnAlreadyTakenSpace e) {
+      throw new VerticalOrHorizontalMove(e.getMessage());
+    }
+    if (Boolean.FALSE.equals(isKillMove(board))) {
+      if (Boolean.TRUE.equals(wasKillMoveAvaliable(white, black))) {
+        throw new MandatoryKillMove();
+      } else {
+        // proceed with program and board update
+      }
+    }
+  }
+
+  private ArrayList<Integer> isOneProperMove(List<List<Piece>> board) throws MoreThanOneMoveMade, MoveOnAlreadyTakenSpace {
+    return new ArrayList<>();
+  }
+
+  private Boolean isKillMove(List<List<Piece>> board) {
+
+    return false;
+  }
+
+  private Boolean wasKillMoveAvaliable(List<PiecePosition> white, List<PiecePosition> black) {
+    return false;
   }
 
   public String toString() {
