@@ -8,7 +8,6 @@ import com.pk.logic.exceptions.MoreThanOneMoveMade;
 import com.pk.logic.exceptions.MoveOnAlreadyTakenSpace;
 import com.pk.logic.exceptions.VerticalOrHorizontalMove;
 
-
 public class BasicLogic implements Logic {
   public BasicLogic(List<List<Piece>> board) {
     // fill the board
@@ -18,7 +17,8 @@ public class BasicLogic implements Logic {
     }
   }
 
-  public void update(List<List<Piece>> board) throws MandatoryKillMove, VerticalOrHorizontalMove, MoreThanOneMoveMade, MoveOnAlreadyTakenSpace {
+  public void update(List<List<Piece>> board)
+      throws MandatoryKillMove, VerticalOrHorizontalMove, MoreThanOneMoveMade, MoveOnAlreadyTakenSpace {
   }
 
   public String toString() {
@@ -27,25 +27,61 @@ public class BasicLogic implements Logic {
       for (int j = 0; j < this.board.get(i).size(); ++j) {
         switch (this.board.get(i).get(j)) {
           case EMPTY:
-          result.append("0");
-          break;
+            result.append("0");
+            break;
           case WHITE_KING:
-          result.append("I");
-          break;
+            result.append("I");
+            break;
           case WHITE_PAWN:
-          result.append("W");
-          break;
+            result.append("W");
+            break;
           case BLACK_PAWN:
-          result.append("B");
-          break;
+            result.append("B");
+            break;
           case BLACK_KING:
-          result.append("X");
-          break;
+            result.append("X");
+            break;
         }
       }
       result.append("\n");
     }
     return result.toString();
+  }
+
+  private class PiecePosition {
+    public PiecePosition(Integer x, Integer y, Piece affiliation) {
+      this.x = x;
+      this.y = y;
+      this.affiliation = affiliation;
+    }
+
+    public Integer getX() {
+      return x;
+    }
+
+    public Integer getY() {
+      return y;
+    }
+
+    public Piece getAffiliation() {
+      return affiliation;
+    }
+
+    public void setX(Integer x) {
+      this.x = x;
+    }
+
+    public void setY(Integer y) {
+      this.y = y;
+    }
+
+    public void setAffiliation(Piece affiliation) {
+      this.affiliation = affiliation;
+    }
+
+    private Integer x;
+    private Integer y;
+    private Piece affiliation;
   }
 
   private ArrayList<ArrayList<Piece>> board;
