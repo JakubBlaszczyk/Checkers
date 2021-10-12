@@ -15,28 +15,34 @@ import java.util.List;
 import com.pk.server.BasicUdpServer;
 import com.pk.server.models.Player;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 public class BasicUdpServerTest {
+  DatagramSocket socket;
+  BasicUdpServer bUdpServer;
+
+  @BeforeEach
+  public void init() {
+    socket = mock(DatagramSocket.class);
+    bUdpServer = new BasicUdpServer(socket);
+  }
 
   @Test
   public void testIfCorrectProbeBeingSend() throws Exception {
-    final DatagramSocket socket = mock(DatagramSocket.class);
-    BasicUdpServer bUdpServer = new BasicUdpServer(socket);
     ArgumentCaptor<DatagramPacket> packetCaptor = ArgumentCaptor.forClass(DatagramPacket.class);
-    doNothing()
-    .doThrow(new RuntimeException("send called second time"))
-    .when(socket).send(packetCaptor.capture());
+    doNothing().doThrow(new RuntimeException("send called second time")).when(socket).send(packetCaptor.capture());
 
     doAnswer(new Answer<Void>() {
       public Void answer(InvocationOnMock invocation) throws SocketTimeoutException {
         throw new SocketTimeoutException();
       }
-    })
-    .when(socket).receive(any(DatagramPacket.class));
+    }).when(socket).receive(any(DatagramPacket.class));
 
     bUdpServer.findPlayers();
     DatagramPacket dp = packetCaptor.getValue();
@@ -50,31 +56,25 @@ public class BasicUdpServerTest {
   public void testParsingCorrectResp() throws Exception {
     // dGVzdA== <-> test
     byte[] bytes = "checkers:probeResp testNik dGVzdA==".getBytes();
-    DatagramPacket receivedPacket = new DatagramPacket(bytes, bytes.length, InetAddress.getByName("192.168.0.105"), 12345);
-    final DatagramSocket socket = mock(DatagramSocket.class);
-    BasicUdpServer bUdpServer = new BasicUdpServer(socket);
-    ArgumentCaptor<DatagramPacket> packetCaptor = ArgumentCaptor.forClass(DatagramPacket.class);
-    doNothing()
-    .doThrow(new RuntimeException("send called second time"))
-    .when(socket).send(packetCaptor.capture());
+    DatagramPacket receivedPacket = new DatagramPacket(bytes, bytes.length, InetAddress.getByName("192.168.0.105"),
+        12345);
+    doNothing().doThrow(new RuntimeException("send called second time")).when(socket).send(any(DatagramPacket.class));
 
     doAnswer(new Answer<Void>() {
       public Void answer(InvocationOnMock invocation) {
         Object[] args = invocation.getArguments();
-        DatagramPacket dp = (DatagramPacket)args[0];
+        DatagramPacket dp = (DatagramPacket) args[0];
         dp.setData(receivedPacket.getData(), 0, receivedPacket.getLength());
         dp.setLength(receivedPacket.getLength());
         dp.setAddress(receivedPacket.getAddress());
         dp.setPort(receivedPacket.getPort());
         return null;
       }
-    })
-    .doAnswer(new Answer<Void>() {
+    }).doAnswer(new Answer<Void>() {
       public Void answer(InvocationOnMock invocation) throws SocketTimeoutException {
         throw new SocketTimeoutException();
       }
-    })
-    .when(socket).receive(any(DatagramPacket.class));
+    }).when(socket).receive(any(DatagramPacket.class));
 
     List<Player> players = bUdpServer.findPlayers();
 
@@ -85,38 +85,34 @@ public class BasicUdpServerTest {
     assertEquals("dGVzdA==", player.getProfileImg());
   }
 
-  @Test
-  public void testParsingInvalidResp() throws Exception {
-    // dGVzdA== <-> test
-    byte[] bytes = "checkers:probeResptestNik dGVzdA==".getBytes();
-    DatagramPacket receivedPacket = new DatagramPacket(bytes, bytes.length, InetAddress.getByName("192.168.0.105"), 12345);
-    final DatagramSocket socket = mock(DatagramSocket.class);
-    BasicUdpServer bUdpServer = new BasicUdpServer(socket);
-    ArgumentCaptor<DatagramPacket> packetCaptor = ArgumentCaptor.forClass(DatagramPacket.class);
-    doNothing()
-    .doThrow(new RuntimeException("send called second time"))
-    .when(socket).send(packetCaptor.capture());
+  @ParameterizedTest
+  @ValueSource(strings = { "checkers:probeResptestNik dGVzdA==", "checkers :probeResptestNik dGVzdA==",
+      "checkers:probeResptestNik dGVz dA==", "checkers:pro beResptestNik dGVzdA==",
+      "checkers:probeResp  testNik dGVzdA==" })
+  public void testParsingInvalidResp(String str) throws Exception {
+    byte[] bytes = str.getBytes();
+    DatagramPacket receivedPacket = new DatagramPacket(bytes, bytes.length, InetAddress.getByName("192.168.0.105"),
+        12345);
+
+    doNothing().doThrow(new RuntimeException("send called second time")).when(socket).send(any(DatagramPacket.class));
 
     doAnswer(new Answer<Void>() {
       public Void answer(InvocationOnMock invocation) {
         Object[] args = invocation.getArguments();
-        DatagramPacket dp = (DatagramPacket)args[0];
+        DatagramPacket dp = (DatagramPacket) args[0];
         dp.setData(receivedPacket.getData(), 0, receivedPacket.getLength());
         dp.setLength(receivedPacket.getLength());
         dp.setAddress(receivedPacket.getAddress());
         dp.setPort(receivedPacket.getPort());
         return null;
       }
-    })
-    .doAnswer(new Answer<Void>() {
+    }).doAnswer(new Answer<Void>() {
       public Void answer(InvocationOnMock invocation) throws SocketTimeoutException {
         throw new SocketTimeoutException();
       }
-    })
-    .when(socket).receive(any(DatagramPacket.class));
+    }).when(socket).receive(any(DatagramPacket.class));
 
     List<Player> players = bUdpServer.findPlayers();
-
     assertEquals(0, players.size());
   }
 }
