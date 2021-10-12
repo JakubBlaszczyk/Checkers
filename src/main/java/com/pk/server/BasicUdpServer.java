@@ -12,23 +12,26 @@ import java.util.List;
 import com.pk.server.models.Packet;
 import com.pk.server.models.Player;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class BasicUdpServer implements UdpServer {  
+@AllArgsConstructor
+public class BasicUdpServer implements UdpServer {
+  private final DatagramSocket socket;
+
   @Override
   public List<Player> findPlayers() {
-    try (DatagramSocket s = new DatagramSocket(10000)) {
+    try {
       byte[] buf = new byte[BUFFER_SIZE];
       InetAddress hostAddress = InetAddress.getByName("255.255.255.255");
       DatagramPacket dp = new DatagramPacket(buf, buf.length, hostAddress, APP_PORT);
       buf = "checkers:probe".getBytes();
       DatagramPacket out = new DatagramPacket(buf, buf.length, hostAddress, APP_PORT);
       log.info("Sending probe");
-      s.send(out);
-      s.setSoTimeout(TIMEOUT);
-      s.getChannel();
-      return getActivePlayers(listenBroadcast(s, dp));
+      sendPacket(out);
+      socket.setSoTimeout(TIMEOUT);
+      return getActivePlayers(listenBroadcast(dp));
     } catch (SocketException e) {
       log.error("Socket closed ", e);
     } catch (IOException e) {
@@ -37,11 +40,11 @@ public class BasicUdpServer implements UdpServer {
     return new ArrayList<>();
   }
 
-  private List<Packet> listenBroadcast(DatagramSocket s, DatagramPacket dp) {
+  private List<Packet> listenBroadcast(DatagramPacket dp) {
     List<Packet> packets = new ArrayList<>();
     while (true) {
       try {
-        s.receive(dp);
+        recvPacket(dp);
         packets.add(new Packet(dp.getAddress(), dp.getPort(), new String(dp.getData())));
         log.info("Got message");
       } catch (SocketTimeoutException e) {
@@ -68,9 +71,9 @@ public class BasicUdpServer implements UdpServer {
       }
       // _ == space, profileImg == base64
       // checkers:resp_nick_profileImg
-      log.info("Msg_pre: ", msg);
+      log.info("Msg_pre: " + msg);
       msg = msg.substring(9);
-      log.info("Msg_post: ", msg);
+      log.info("Msg_post: " + msg);
       log.info("Substring: ", msg.substring(9, 13));
       if (!msg.substring(0, 9).equals("probeResp")) {
         log.warn(String.format("Invalid substring, string: %s, substring: %s", msg, msg.substring(0, 9)));
@@ -90,5 +93,13 @@ public class BasicUdpServer implements UdpServer {
       players.add(player);
     }
     return players;
+  }
+
+  protected void recvPacket(DatagramPacket in) throws IOException {
+    socket.receive(in);
+  }
+
+  protected void sendPacket(DatagramPacket out) throws IOException {
+    socket.send(out);
   }
 }
