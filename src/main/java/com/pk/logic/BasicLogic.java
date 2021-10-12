@@ -15,6 +15,9 @@ public class BasicLogic implements Logic {
     for (int i = 0; i < board.size(); ++i) {
       this.board.add(new ArrayList<>(board.get(i)));
     }
+    // analyze white and black positions
+    this.white = findAllWhite(board);
+    this.black = findAllBlack(board);
   }
 
   public void update(List<List<Piece>> board)
@@ -46,6 +49,47 @@ public class BasicLogic implements Logic {
       result.append("\n");
     }
     return result.toString();
+  }
+
+  private ArrayList<PiecePosition> findAllWhite(List<List<Piece>> board) {
+    ArrayList<PiecePosition> whiteLocal = new ArrayList<>();
+    for (int i = 0; i < board.size(); ++i) {
+      for (int j = 0; j < board.get(i).size(); ++j) {
+        if (board.get(i).get(j).equals(Piece.WHITE_KING) || board.get(i).get(j).equals(Piece.WHITE_PAWN)) {
+          whiteLocal.add(new PiecePosition(Integer.valueOf(i), Integer.valueOf(j), board.get(i).get(j)));
+        }
+      }
+    }
+    return whiteLocal;
+  }
+
+  private ArrayList<PiecePosition> findAllBlack(List<List<Piece>> board) {
+    ArrayList<PiecePosition> blackLocal = new ArrayList<>();
+    for (int i = 0; i < board.size(); ++i) {
+      for (int j = 0; j < board.get(i).size(); ++j) {
+        if (board.get(i).get(j).equals(Piece.BLACK_KING) || board.get(i).get(j).equals(Piece.BLACK_PAWN)) {
+          blackLocal.add(new PiecePosition(Integer.valueOf(i), Integer.valueOf(j), board.get(i).get(j)));
+        }
+      }
+    }
+    return blackLocal;
+  }
+
+  private void isNonDiagonalMove(List<PiecePosition> white, List<PiecePosition> black) throws VerticalOrHorizontalMove {
+
+    for (int i = 0; i < white.size(); ++i) {
+      if (white.get(i).getX() % 2 == 1 && white.get(i).getY() % 2 == 0
+          || white.get(i).getX() % 2 == 0 && white.get(i).getY() % 2 == 1) {
+        throw new VerticalOrHorizontalMove("White made illegal move\n");
+      }
+    }
+
+    for (int i = 0; i < black.size(); ++i) {
+      if (black.get(i).getX() % 2 == 1 && black.get(i).getY() % 2 == 0
+          || black.get(i).getX() % 2 == 0 && black.get(i).getY() % 2 == 1) {
+        throw new VerticalOrHorizontalMove("Black made illegal move\n");
+      }
+    }
   }
 
   private class PiecePosition {
@@ -84,5 +128,7 @@ public class BasicLogic implements Logic {
     private Piece affiliation;
   }
 
+  private ArrayList<PiecePosition> white;
+  private ArrayList<PiecePosition> black;
   private ArrayList<ArrayList<Piece>> board;
 }
