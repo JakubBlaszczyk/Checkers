@@ -1,6 +1,9 @@
 package com.pk.logic.exceptions;
 
 public class MandatoryKillMove extends Exception {
+    public MandatoryKillMove() {
+    }
+
     public MandatoryKillMove(String errorMessage) {
         super(errorMessage);
     }
