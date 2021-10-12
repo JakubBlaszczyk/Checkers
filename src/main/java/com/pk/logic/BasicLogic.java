@@ -8,7 +8,7 @@ public class BasicLogic implements Logic {
     this.board = new ArrayList<>(board.size());
     for (int i = 0; i < board.size(); ++i) {
       this.board.add(new ArrayList<>(board.get(i)));
-      }
+    }
   }
 
   public void update(List<List<Integer>> board) {
