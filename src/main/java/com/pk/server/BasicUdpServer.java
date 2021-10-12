@@ -75,7 +75,7 @@ public class BasicUdpServer implements UdpServer {
       msg = msg.substring(9);
       log.info("Msg_post: " + msg);
       log.info("Substring: ", msg.substring(9, 13));
-      if (!msg.substring(0, 9).equals("probeResp")) {
+      if (!msg.substring(0, 10).equals("probeResp ")) {
         log.warn(String.format("Invalid substring, string: %s, substring: %s", msg, msg.substring(0, 9)));
         continue;
       }
