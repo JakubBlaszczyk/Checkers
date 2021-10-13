@@ -1,6 +1,8 @@
 package com.pk.server;
 
-public interface ProbeResponder extends Runnable {
+import java.util.concurrent.Callable;
+
+public interface ProbeResponder extends Callable<Integer> {
   public void setNick(String nick);
   public void setProfileImg(String profileImg);
   public String getNick();

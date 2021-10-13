@@ -16,6 +16,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.pk.server.BasicTcpServer;
@@ -39,15 +42,16 @@ public class BasicTcpServerTest {
   public void testIfServerIsAcceptingConnections() throws Exception {
     BlockingQueue<Invite> bQueue = new LinkedBlockingQueue<>();
     TcpServer tcpServer = new BasicTcpServer(bQueue, "127.0.0.1", 10000);
-    Thread th = new Thread(tcpServer);
-    th.start();
+    // Thread th = new Thread(tcpServer);
+    ExecutorService executorService = Executors.newFixedThreadPool(1);
+    Future<Integer> futureTcp = executorService.submit(tcpServer);
     Socket[] socks = new Socket[10];
     for (int i = 0; i < 10; ++i) {
       socks[i] = new Socket(InetAddress.getByName("127.0.0.1"), 10000);
       assertTrue(socks[i].isConnected());
     }
+    futureTcp.cancel(true);
     tcpServer.cleanup();
-    th.stop();
   }
 
   @Test

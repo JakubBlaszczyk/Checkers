@@ -9,6 +9,7 @@ import java.net.UnknownHostException;
 import java.util.Base64;
 
 import lombok.AllArgsConstructor;
+import lombok.Cleanup;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,22 +40,17 @@ public class BasicProbeResponder implements ProbeResponder {
   }
 
   @Override
-  public void run() {
+  public Integer call() throws Exception {
+    @Cleanup DatagramSocket ds = createSocket(10000);
     for (;;) {
-      try (DatagramSocket ds = createSocket(10000)) {
-        String msg = recvMsg(ds);
-        DatagramPacket dp = prepareResponse(msg);
-        if (dp == null) {
-          log.info("dp is null");
-          continue;
-        }
-        log.info("DP: " + dp.toString());
-        ds.send(dp);
-
-      } catch (IOException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
+      String msg = recvMsg(ds);
+      DatagramPacket dp = prepareResponse(msg);
+      if (dp == null) {
+        log.info("dp is null");
+        continue;
       }
+      log.info("DP: " + dp.toString());
+      ds.send(dp);
     }
   }
 

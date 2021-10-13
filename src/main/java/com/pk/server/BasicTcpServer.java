@@ -43,34 +43,30 @@ public class BasicTcpServer implements TcpServer {
     selector.close();
   }
 
-  /**
-   * Thread used to handle all incoming Tcp traffic
-   */
   @Override
-  public void run() {
-    try {
-      SelectionKey key = null;
-      while (true) {
-        if (selector.select() <= 0)
-          continue;
-        Set<SelectionKey> selectedKeys = selector.selectedKeys();
-        Iterator<SelectionKey> iterator = selectedKeys.iterator();
-        while (iterator.hasNext()) {
-          key = iterator.next();
-          iterator.remove();
-          if (key.isAcceptable()) {
-            SocketChannel sc = serverSocketChannel.accept();
-            sc.configureBlocking(false);
-            sc.register(selector, SelectionKey.OP_READ);
-            log.info("Connection Accepted: " + sc.getLocalAddress());
-          }
-          if (key.isReadable()) {
-            readInvite(key, bQueue);
-          }
+  public Integer call() throws Exception {
+    SelectionKey key = null;
+    while (true) {
+      if (Thread.currentThread().isInterrupted()) {
+        return 0;
+      }
+      if (selector.select() <= 0)
+        continue;
+      Set<SelectionKey> selectedKeys = selector.selectedKeys();
+      Iterator<SelectionKey> iterator = selectedKeys.iterator();
+      while (iterator.hasNext()) {
+        key = iterator.next();
+        iterator.remove();
+        if (key.isAcceptable()) {
+          SocketChannel sc = serverSocketChannel.accept();
+          sc.configureBlocking(false);
+          sc.register(selector, SelectionKey.OP_READ);
+          log.info("Connection Accepted: " + sc.getLocalAddress());
+        }
+        if (key.isReadable()) {
+          readInvite(key, bQueue);
         }
       }
-    } catch (Exception e) {
-      log.error("ERROR: ", e);
     }
   }
 
