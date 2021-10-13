@@ -4,8 +4,8 @@
   <artifactId>checkers</artifactId>
   <version>1.0-SNAPSHOT</version>
   <properties>
-    <maven.compiler.source>16</maven.compiler.source>
-    <maven.compiler.target>16</maven.compiler.target>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <junit.version>5.6.0</junit.version>
     <lombok.version>1.18.22</lombok.version>
@@ -18,15 +18,17 @@
     <junit-jupiter-params.version>5.4.0</junit-jupiter-params.version>
     <maven-surefire-plugin.version>2.22.1</maven-surefire-plugin.version>
     <powermock.version>2.0.9</powermock.version>
+    <jib-maven-plugin.version>3.1.4</jib-maven-plugin.version>
+    <git-commit-id-plugin.version>4.9.10</git-commit-id-plugin.version>
   </properties>
   <dependencies>
-     <dependency>
-        <groupId>org.powermock</groupId>
-        <artifactId>powermock-module-junit4</artifactId>
-        <version>${powermock.version}</version>
-        <scope>test</scope>
-     </dependency>
-     <dependency>
+    <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-module-junit4</artifactId>
+      <version>${powermock.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.powermock</groupId>
       <artifactId>powermock-api-mockito2</artifactId>
       <version>${powermock.version}</version>
@@ -49,6 +51,7 @@
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>${lombok.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>ch.qos.logback</groupId>
@@ -73,10 +76,67 @@
     <finalName>checkers</finalName>
     <plugins>
       <plugin>
+        <groupId>pl.project13.maven</groupId>
+        <artifactId>git-commit-id-plugin</artifactId>
+        <version>${git-commit-id-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>get-the-git-infos</id>
+            <goals>
+              <goal>revision</goal>
+            </goals>
+            <phase>initialize</phase>
+          </execution>
+        </executions>
+        <configuration>
+          <generateGitPropertiesFile>true</generateGitPropertiesFile>
+          <generateGitPropertiesFilename>${project.build.outputDirectory}/git.properties</generateGitPropertiesFilename>
+          <includeOnlyProperties>
+            <includeOnlyProperty>^git.build.(time|version)$</includeOnlyProperty>
+            <includeOnlyProperty>^git.commit.id.(abbrev|full)$</includeOnlyProperty>
+          </includeOnlyProperties>
+          <commitIdGenerationMode>full</commitIdGenerationMode>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>com.google.cloud.tools</groupId>
+        <artifactId>jib-maven-plugin</artifactId>
+        <version>${jib-maven-plugin.version}</version>
+        <configuration>
+          <from>
+            <image></image>
+          </from>
+          <to>
+            <image>checkers</image>
+            <tags>
+              <tag>${git.commit.id.abbrev}</tag>
+            </tags>
+          </to>
+          <container>
+            <ports>
+              <port>10000</port>
+            </ports>
+            <jvmFlags>
+              <jvmFlag>-server</jvmFlag>
+              <jvmFlag>-Xms1G</jvmFlag>
+              <jvmFlag>-Xmx1G</jvmFlag>
+              <jvmFlag>-XX:MetaspaceSize=96m</jvmFlag>
+              <jvmFlag>-XX:+UseG1GC</jvmFlag>
+              <jvmFlag>-XX:MaxGCPauseMillis=20</jvmFlag>
+              <jvmFlag>-XX:InitiatingHeapOccupancyPercent=35</jvmFlag>
+              <jvmFlag>-XX:G1HeapRegionSize=16M</jvmFlag>
+              <jvmFlag>-XX:MinMetaspaceFreeRatio=50</jvmFlag>
+              <jvmFlag>-XX:MaxMetaspaceFreeRatio=80</jvmFlag>
+            </jvmFlags>
+          </container>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin.version}</version>
-      </plugin>    
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
