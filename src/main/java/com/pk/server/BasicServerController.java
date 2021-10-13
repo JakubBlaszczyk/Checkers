@@ -1,6 +1,7 @@
 package com.pk.server;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.nio.channels.ClosedChannelException;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.List;
@@ -19,8 +20,8 @@ public class BasicServerController implements ServerController {
   private Thread tcpThread;
   private Thread pResponderThread;
 
-  public BasicServerController(BlockingQueue<Invite> bQueue, String ip, Integer port, String nick, String profileImg) {
-    udpServer = new BasicUdpServer();
+  public BasicServerController(BlockingQueue<Invite> bQueue, String ip, Integer port, String nick, String profileImg) throws IOException {
+    udpServer = new BasicUdpServer(new DatagramSocket(port));
     pResponder = new BasicProbeResponder(nick, profileImg);
     pResponderThread = new Thread(pResponder);
     tcpServer = new BasicTcpServer(bQueue, ip, port);
