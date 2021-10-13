@@ -5,6 +5,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Base64;
 
+import com.pk.server.exceptions.ChatMsgRejected;
+import com.pk.server.exceptions.MoveRejected;
 import com.pk.server.models.Move;
 
 import lombok.AllArgsConstructor;
@@ -16,7 +18,7 @@ public class BasicGameSession implements GameSession {
   private SocketChannel sc;
 
   @Override
-  public void move(Move move) throws IOException {
+  public void move(Move move) throws IOException, MoveRejected {
     // checkers:move srcX srcY dstX dstY
     sc.write(ByteBuffer.wrap(("checkers:move " + move.toSendableFormat()).getBytes()));
     ByteBuffer buf = ByteBuffer.wrap(new byte[100]);
@@ -29,14 +31,13 @@ public class BasicGameSession implements GameSession {
         continue;
       }
       if (!msg.equals("checkers:moveOk")) {
-        // FIXME add dedicated Exception
-        throw new IOException();
+        throw new MoveRejected("Packet received: " + msg);
       }
     }
   }
 
   @Override
-  public void chatSendMsg(String msg) throws IOException {
+  public void chatSendMsg(String msg) throws IOException, ChatMsgRejected {
     // checkers:msg MSG
     byte[] encodedMsg = Base64.getEncoder().encode(msg.getBytes());
     sc.write(ByteBuffer.wrap(("checkers:msg " + new String(encodedMsg)).getBytes()));
@@ -50,8 +51,7 @@ public class BasicGameSession implements GameSession {
         continue;
       }
       if (!msg.equals("checkers:msgOk")) {
-        // FIXME add dedicated Exception
-        throw new IOException();
+        throw new ChatMsgRejected("Packet received: " + msg);
       }
     }
   }
