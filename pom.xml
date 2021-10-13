@@ -14,12 +14,25 @@
     <maven-assembly.version>3.1.1</maven-assembly.version>
     <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
     <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
-    <mockito-core.version>3.2.0</mockito-core.version>
-    <powermock.version>1.6.6</powermock.version>
+    <mockito-core.version>4.0.0</mockito-core.version>
     <junit-jupiter-params.version>5.4.0</junit-jupiter-params.version>
     <maven-surefire-plugin.version>2.22.1</maven-surefire-plugin.version>
+    <powermock.version>2.0.9</powermock.version>
   </properties>
   <dependencies>
+     <dependency>
+        <groupId>org.powermock</groupId>
+        <artifactId>powermock-module-junit4</artifactId>
+        <version>${powermock.version}</version>
+        <scope>test</scope>
+     </dependency>
+     <dependency>
+      <groupId>org.powermock</groupId>
+      <artifactId>powermock-api-mockito2</artifactId>
+      <version>${powermock.version}</version>
+      <scope>test</scope>
+    </dependency>
+
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
