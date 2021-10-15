@@ -2,8 +2,6 @@ package com.pk.logic;
 
 import java.util.List;
 
-import javax.management.openmbean.ArrayType;
-
 import java.util.ArrayList;
 
 import com.pk.logic.exceptions.MandatoryKillMove;
@@ -28,16 +26,10 @@ public class BasicLogic implements Logic {
     ArrayList<PiecePosition> white = findAllWhite(board);
     ArrayList<PiecePosition> black = findAllBlack(board);
     ArrayList<Integer> positions;
-    try {
-      positions = isOneProperMove(board);
-      isNonDiagonalMove(white, black);
-    } catch (MoreThanOneMoveMade e) {
-      throw new MoreThanOneMoveMade();
-    } catch (VerticalOrHorizontalMove e) {
-      throw new VerticalOrHorizontalMove(e.getMessage());
-    } catch (MoveOnAlreadyTakenSpace e) {
-      throw new VerticalOrHorizontalMove(e.getMessage());
-    }
+
+    positions = isOneProperMove(board);
+    isNonDiagonalMove(white, black);
+    
     if (Boolean.FALSE.equals(isKillMove(board))) {
       if (Boolean.TRUE.equals(wasKillMoveAvaliable(white, black))) {
         throw new MandatoryKillMove();
@@ -47,7 +39,8 @@ public class BasicLogic implements Logic {
     }
   }
 
-  private ArrayList<Integer> isOneProperMove(List<List<Piece>> board) throws MoreThanOneMoveMade, MoveOnAlreadyTakenSpace {
+  private ArrayList<Integer> isOneProperMove(List<List<Piece>> board)
+      throws MoreThanOneMoveMade, MoveOnAlreadyTakenSpace {
     return new ArrayList<>();
   }
 
