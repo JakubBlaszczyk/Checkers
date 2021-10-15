@@ -6,14 +6,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.Arrays;
-
-import com.pk.server.BasicProbeResponder;
-import com.pk.server.ProbeResponder;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,19 +21,13 @@ import org.mockito.Mockito;
  * Unit tests for thread responding to probe beacons.
  */
 public class BasicProbeResponderTest {
-  private Method recvMsgMethod;
-  private Method prepareResponseMethod;
-  private ProbeResponder pResponder;
+  private BasicProbeResponder pResponder;
   private DatagramSocket mockedSocket;
 
   @BeforeEach
   void init() throws Exception {
     pResponder = new BasicProbeResponder("nik", "dGVzdFN0cmluZw==");
     mockedSocket = Mockito.mock(DatagramSocket.class);
-    prepareResponseMethod = pResponder.getClass().getDeclaredMethod("prepareResponse", String.class);
-    recvMsgMethod = pResponder.getClass().getDeclaredMethod("recvMsg", DatagramSocket.class);
-    recvMsgMethod.setAccessible(true);
-    prepareResponseMethod.setAccessible(true);
   }
 
   @Test
@@ -50,10 +40,10 @@ public class BasicProbeResponderTest {
     mockedSocket.receive(dp);
     System.out.println("Data: " + new String(dp.getData()));
 
-    String msg = (String) recvMsgMethod.invoke(pResponder, mockedSocket);
+    String msg = pResponder.recvMsg(mockedSocket);
     assertEquals("checkers:probe", msg);
 
-    dp = (DatagramPacket) prepareResponseMethod.invoke(pResponder, msg);
+    dp = pResponder.prepareResponse(msg);
     String validResponse = String.format("checkers:probeResp %s %s", pResponder.getNick(), pResponder.getProfileImg());
     assertTrue(Arrays.equals(validResponse.getBytes(), dp.getData()));
     assertEquals(10000, dp.getPort());
@@ -73,10 +63,10 @@ public class BasicProbeResponderTest {
     mockedSocket.receive(dp);
     System.out.println("Data: " + new String(dp.getData()));
 
-    String msg = (String) recvMsgMethod.invoke(pResponder, mockedSocket);
+    String msg = pResponder.recvMsg(mockedSocket);
     assertEquals(str, msg);
 
-    dp = (DatagramPacket) prepareResponseMethod.invoke(pResponder, msg);
+    dp = pResponder.prepareResponse(msg);
     assertEquals(null, dp);
   }
 

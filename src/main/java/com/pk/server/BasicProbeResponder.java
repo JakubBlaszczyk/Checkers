@@ -54,14 +54,14 @@ public class BasicProbeResponder implements ProbeResponder {
     }
   }
 
-  private String recvMsg(DatagramSocket ds) throws IOException {
+  protected String recvMsg(DatagramSocket ds) throws IOException {
     byte[] buf = new byte[100];
     DatagramPacket dp = new DatagramPacket(buf, buf.length);
     ds.receive(dp);
     return new String(dp.getData(), 0, dp.getLength());
   }
 
-  private DatagramPacket prepareResponse(String msg) throws UnknownHostException {
+  protected DatagramPacket prepareResponse(String msg) throws UnknownHostException {
     if (!verifyProbe(msg)) {
       return null;
     }
