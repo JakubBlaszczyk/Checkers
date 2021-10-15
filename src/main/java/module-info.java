@@ -4,5 +4,7 @@ module com.pk {
 
 
     opens com.pk to javafx.fxml;
+    opens com.pk.frontend.menu to javafx.fxml;
     exports com.pk;
+    exports com.pk.frontend.menu to javafx.fxml;
 }

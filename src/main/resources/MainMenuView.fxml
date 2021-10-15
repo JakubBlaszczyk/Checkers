@@ -1,29 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1">
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pk.frontend.menu.MainMenuController">
    <top>
       <MenuBar BorderPane.alignment="CENTER">
         <menus>
-          <Menu mnemonicParsing="false" text="File">
+          <Menu fx:id="game" mnemonicParsing="false" text="%game">
             <items>
-              <MenuItem mnemonicParsing="false" text="Close" />
+              <MenuItem fx:id="returnToMenu" mnemonicParsing="false" text="%returnToMenu" />
+                  <MenuItem fx:id="leaveGame" mnemonicParsing="false" text="%leaveGame" />
             </items>
           </Menu>
-          <Menu mnemonicParsing="false" text="Edit">
+          <Menu fx:id="help" mnemonicParsing="false" text="%help">
             <items>
-              <MenuItem mnemonicParsing="false" text="Delete" />
+              <MenuItem fx:id="rules" mnemonicParsing="false" text="%rules" />
+                  <MenuItem fx:id="creators" mnemonicParsing="false" text="%creators" />
             </items>
           </Menu>
-          <Menu mnemonicParsing="false" text="Help">
-            <items>
-              <MenuItem mnemonicParsing="false" text="About" />
-            </items>
-          </Menu>
+            <Menu fx:id="language" mnemonicParsing="false" text="%language">
+               <items>
+                  <MenuItem fx:id="polish" mnemonicParsing="false" onAction="#switchLanguageToPolish" text="%polish" />
+                  <MenuItem fx:id="english" mnemonicParsing="false" onAction="#switchLanguageToEnglish" text="%english" />
+               </items>
+            </Menu>
         </menus>
       </MenuBar>
    </top>
+   <center>
+      <StackPane prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+         <children>
+            <Button fx:id="hotseat" mnemonicParsing="false" text="%hotseat" StackPane.alignment="CENTER">
+               <StackPane.margin>
+                  <Insets bottom="200.0" />
+               </StackPane.margin>
+            </Button>
+            <Button fx:id="multiplayer" layoutX="384.0" layoutY="385.0" mnemonicParsing="false" text="%multiplayer">
+               <StackPane.margin>
+                  <Insets bottom="100.0" />
+               </StackPane.margin>
+            </Button>
+            <Button fx:id="exit" layoutX="384.0" layoutY="285.0" mnemonicParsing="false" text="%exit" />
+         </children>
+      </StackPane>
+   </center>
 </BorderPane>
