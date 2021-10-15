@@ -1,5 +1,5 @@
 module com.pk {
-    requires javafx.controls;
+    requires transitive javafx.controls;
     requires javafx.fxml;
     requires static lombok;
     requires org.slf4j;
