@@ -1,4 +1,4 @@
-package com.pk.Server;
+package com.pk.server;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
