@@ -15,6 +15,6 @@ public interface ServerController {
   public void move(Move move) throws ClosedChannelException, IOException, MoveRejected;
   public void chatSendMsg(String msg) throws ClosedChannelException, IOException, ChatMsgRejected ;
   public List<Player> findPlayers();
-  public GameSession invite(Invite invite) throws InvalidAlgorithmParameterException, IOException;
+  public GameSession invite(Player player) throws InvalidAlgorithmParameterException, IOException;
   public GameSession acceptInvitation(Invite invite) throws IOException, InvalidAlgorithmParameterException;
 }

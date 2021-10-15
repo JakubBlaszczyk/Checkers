@@ -60,8 +60,8 @@ public class BasicServerController implements ServerController {
   }
 
   @Override
-  public GameSession invite(Invite invite) throws InvalidAlgorithmParameterException, IOException {
-    return tcpServer.invite(invite);
+  public GameSession invite(Player player) throws InvalidAlgorithmParameterException, IOException {
+    return tcpServer.invite(player);
   }
 
   @Override
