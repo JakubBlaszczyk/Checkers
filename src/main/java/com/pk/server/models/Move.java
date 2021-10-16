@@ -1,7 +1,6 @@
 package com.pk.server.models;
 
 import java.io.IOException;
-import java.util.List;
 
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
