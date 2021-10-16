@@ -12,7 +12,7 @@
     <logback-classic.version>1.2.5</logback-classic.version>
     <slf4j-log4j12.version>1.7.32</slf4j-log4j12.version>
     <maven-assembly.version>3.1.1</maven-assembly.version>
-    <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
+    <maven-javadoc-plugin.version>3.3.1</maven-javadoc-plugin.version>
     <maven-jar-plugin.version>3.2.0</maven-jar-plugin.version>
     <mockito-core.version>4.0.0</mockito-core.version>
     <junit-jupiter-params.version>5.4.0</junit-jupiter-params.version>
@@ -20,7 +20,7 @@
     <powermock.version>2.0.9</powermock.version>
     <jib-maven-plugin.version>3.1.4</jib-maven-plugin.version>
     <git-commit-id-plugin.version>4.9.10</git-commit-id-plugin.version>
-    <javafx.version>17</javafx.version>
+    <javafx.version>17.0.0.1</javafx.version>
     <javafx-maven-plugin.version>0.0.8</javafx-maven-plugin.version>
   </properties>
   <dependencies>
