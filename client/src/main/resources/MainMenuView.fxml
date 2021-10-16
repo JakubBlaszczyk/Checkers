@@ -3,10 +3,11 @@
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pk.frontend.menu.MainMenuController">
    <top>
-      <MenuBar BorderPane.alignment="CENTER">
+      <MenuBar style="-fx-background-color: #F2EEEB;" BorderPane.alignment="CENTER">
         <menus>
           <Menu fx:id="game" mnemonicParsing="false" text="%game">
             <items>
@@ -17,7 +18,7 @@
           <Menu fx:id="help" mnemonicParsing="false" text="%help">
             <items>
               <MenuItem fx:id="rules" mnemonicParsing="false" text="%rules" />
-                  <MenuItem fx:id="creators" mnemonicParsing="false" text="%creators" />
+                  <MenuItem fx:id="creators" mnemonicParsing="false" onAction="#showCreators" text="%creators" />
             </items>
           </Menu>
             <Menu fx:id="language" mnemonicParsing="false" text="%language">
@@ -30,19 +31,31 @@
       </MenuBar>
    </top>
    <center>
-      <StackPane prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+      <StackPane fx:id="stackPane" prefHeight="150.0" prefWidth="200.0" style="-fx-background-color: #F2BBC9;" BorderPane.alignment="CENTER">
          <children>
-            <Button fx:id="hotseat" mnemonicParsing="false" text="%hotseat" StackPane.alignment="CENTER">
+            <Button fx:id="hotseat" mnemonicParsing="false" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%hotseat" StackPane.alignment="CENTER">
                <StackPane.margin>
-                  <Insets bottom="200.0" />
+                  <Insets bottom="300.0" />
                </StackPane.margin>
+               <font>
+                  <Font name="Century Gothic Bold" size="36.0" />
+               </font>
             </Button>
-            <Button fx:id="multiplayer" layoutX="384.0" layoutY="385.0" mnemonicParsing="false" text="%multiplayer">
+            <Button fx:id="multiplayer" layoutX="384.0" layoutY="385.0" mnemonicParsing="false" onAction="#showLobby" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%multiplayer">
                <StackPane.margin>
                   <Insets bottom="100.0" />
                </StackPane.margin>
+               <font>
+                  <Font name="Century Gothic Bold" size="36.0" />
+               </font>
             </Button>
-            <Button fx:id="exit" layoutX="384.0" layoutY="285.0" mnemonicParsing="false" text="%exit" />
+            <Button fx:id="exit" layoutX="384.0" layoutY="285.0" mnemonicParsing="false" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%exit">
+               <font>
+                  <Font name="Century Gothic Bold" size="36.0" />
+               </font>
+               <StackPane.margin>
+                  <Insets top="100.0" />
+               </StackPane.margin></Button>
          </children>
       </StackPane>
    </center>
