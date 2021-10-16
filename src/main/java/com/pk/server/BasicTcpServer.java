@@ -31,6 +31,8 @@ public class BasicTcpServer implements TcpServer {
   private @Getter @Setter @NonNull BlockingQueue<Invite> bQueue;
   private Selector selector;
   private ServerSocketChannel serverSocketChannel;
+  private @Setter @NonNull String nick;
+  private @Setter @NonNull String profileImg;
 
   public BasicTcpServer(BlockingQueue<Invite> bQueue, String ip, Integer port) throws IOException {
     this.bQueue = bQueue;
@@ -86,9 +88,7 @@ public class BasicTcpServer implements TcpServer {
       log.warn("Socket is already closed");
       throw new InvalidAlgorithmParameterException();
     }
-    // checkers:invitationOk
-    //FIXME hardcoded!
-    sock.getOutputStream().write(("checkers:invitationAsk " + "testNik " + "testProfajlowe").getBytes());
+    sock.getOutputStream().write(("checkers:invitationAsk " + nick + " " + profileImg).getBytes());
     byte[] buf = new byte[100];
     int len = sock.getInputStream().read(buf);
     log.debug("Send len: " + len);
@@ -103,7 +103,7 @@ public class BasicTcpServer implements TcpServer {
     }
   }
 
-  private Socket openSocketToPlayer(InetAddress addr) throws IOException {
+  protected Socket openSocketToPlayer(InetAddress addr) throws IOException {
     return new Socket(addr, 10000);
   }
 
