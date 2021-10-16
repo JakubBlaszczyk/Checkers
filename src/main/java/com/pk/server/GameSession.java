@@ -1,6 +1,7 @@
 package com.pk.server;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 
@@ -14,4 +15,5 @@ public interface GameSession extends Callable<Integer> {
 
   public BlockingQueue<String> getBQueueMsgs();
   public BlockingQueue<Move> getBQueueMoves();
+  public Socket getSocket();
 }

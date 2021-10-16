@@ -17,17 +17,17 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @AllArgsConstructor
 public class BasicGameSession implements GameSession {
-  private Socket sock;
+  private Socket socket;
   private BlockingQueue<String> bQueueMsgs;
   private BlockingQueue<Move> bQueueMoves;
 
   @Override
   public void move(Move move) throws IOException, MoveRejected {
     // checkers:move srcX srcY dstX dstY
-    sock.getOutputStream().write(("checkers:move " + move.toSendableFormat()).getBytes());
+    socket.getOutputStream().write(("checkers:move " + move.toSendableFormat()).getBytes());
     byte[] buf = new byte[100];
     for (;;) {
-      int len = sock.getInputStream().read(buf);
+      int len = socket.getInputStream().read(buf);
       if (len == 0) {
         log.error("Invalid response");
       }
@@ -42,14 +42,14 @@ public class BasicGameSession implements GameSession {
   public void chatSendMsg(String msg) throws IOException, ChatMsgRejected {
     // checkers:msg MSG
     byte[] encodedMsg = Base64.getEncoder().encode(msg.getBytes());
-    sock.getOutputStream().write(("checkers:msg " + new String(encodedMsg)).getBytes());
+    socket.getOutputStream().write(("checkers:msg " + new String(encodedMsg)).getBytes());
   }
 
   @Override
   public Integer call() throws Exception {
     byte[] buf = new byte[100];
     for (;;) {
-      int len = sock.getInputStream().read(buf);
+      int len = socket.getInputStream().read(buf);
       log.info("len: " + len);
       if (len == -1) {
         //FIXME add clean up function
