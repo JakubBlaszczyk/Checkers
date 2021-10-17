@@ -117,12 +117,16 @@
   </dependencies>
   <build>
     <finalName>checkers</finalName>
+    <!-- <pluginManagement> -->
     <plugins>
       <plugin>
         <groupId>org.openjfx</groupId>
         <artifactId>javafx-maven-plugin</artifactId>
         <version>${javafx-maven-plugin.version}</version>
-    </plugin>
+        <configuration>
+          <mainClass>com.pk.App</mainClass>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>pl.project13.maven</groupId>
         <artifactId>git-commit-id-plugin</artifactId>
@@ -146,7 +150,6 @@
           <commitIdGenerationMode>full</commitIdGenerationMode>
         </configuration>
       </plugin>
-
       <plugin>
         <groupId>com.google.cloud.tools</groupId>
         <artifactId>jib-maven-plugin</artifactId>
@@ -185,14 +188,14 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
-            <argLine>
+          <argLine>
               --illegal-access=permit
               --add-opens java.base/java.lang=ALL-UNNAMED
               --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
               -Dillegal-access=permit
             </argLine>
         </configuration>
-      </plugin>    
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
@@ -201,7 +204,7 @@
           <archive>
             <manifest>
               <mainClass>
-                    com.pk.App
+                  com.pk.SuperMain
                 </mainClass>
             </manifest>
           </archive>
@@ -227,20 +230,30 @@
           <archive>
             <manifest>
               <addClasspath>true</addClasspath>
-              <mainClass>com.pk.App</mainClass>
+              <mainClass>com.pk.SuperMain</mainClass>
             </manifest>
           </archive>
         </configuration>
       </plugin>
-    </plugins>
-  </build>
-  <reporting>
-    <plugins>
+      <plugin>
+        <groupId>com.github.auties00</groupId>
+        <artifactId>delombok-plugin</artifactId>
+        <version>1.18.20</version>
+        <configuration>
+          <rootDirectory>${project.build.sourceDirectory}</rootDirectory>
+          <outputDirectory>${project.build.directory}/generated-sources/delombok</outputDirectory>
+          <addOutputDirectory>false</addOutputDirectory>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>${maven-javadoc-plugin.version}</version>
+        <version>3.3.1</version>
+        <configuration>
+          <sourcepath>${project.build.directory}/generated-sources/delombok</sourcepath>
+        </configuration>
       </plugin>
     </plugins>
-  </reporting>
+    <!-- </pluginManagement> -->
+  </build>
 </project>
