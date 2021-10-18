@@ -15,13 +15,14 @@ public class Move {
   Integer srcY;
   Integer dstX;
   Integer dstY;
-  
+
   /**
    * Convert Move instance to space separated string.
+   * 
    * @return Returns Move as string where all values are separated by space.
    */
   public String toSendableFormat() {
-    String msg = String.valueOf(srcX) + " " + srcY + " " + dstX + " " + dstY; 
+    String msg = String.valueOf(srcX) + " " + srcY + " " + dstX + " " + dstY;
     log.info("toSendableFormat() -> " + msg);
     return msg;
   }
@@ -37,6 +38,7 @@ public class Move {
       log.error("Invalid string passed, tokens len: " + tokens.length);
       throw new IOException("placeholder");
     }
-    return new Move(Integer.valueOf(tokens[0]), Integer.valueOf(tokens[1]), Integer.valueOf(tokens[2]), Integer.valueOf(tokens[3]));
+    return new Move(Integer.valueOf(tokens[0]), Integer.valueOf(tokens[1]), Integer.valueOf(tokens[2]),
+        Integer.valueOf(tokens[3]));
   }
 }

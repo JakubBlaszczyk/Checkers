@@ -9,12 +9,12 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.security.InvalidAlgorithmParameterException;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import com.pk.server.exceptions.InvitationRejected;
 import com.pk.server.models.Invite;
 import com.pk.server.models.Player;
 
@@ -84,12 +84,12 @@ public class BasicTcpServer implements TcpServer {
     }
   }
 
-  public GameSession invite(Player player) throws InvalidAlgorithmParameterException, IOException {
+  public GameSession invite(Player player) throws InvitationRejected, IOException {
     Socket sock = openSocketToPlayer(player.getIp());
 
     if (!sock.isConnected()) {
-      log.warn("Socket is already closed");
-      throw new InvalidAlgorithmParameterException();
+      log.error("Socket is already closed");
+      throw new IOException("Socket is already closed");
     }
     sock.getOutputStream().write(("checkers:invitationAsk " + nick + " " + profileImg).getBytes());
     byte[] buf = new byte[100];
@@ -100,9 +100,9 @@ public class BasicTcpServer implements TcpServer {
       log.info("Invitation accepted");
       return new BasicGameSession(sock, new LinkedBlockingQueue<>(), new LinkedBlockingQueue<>());
     } else if (msg.equals("checkers:invitationRejected")) {
-      throw new InvalidAlgorithmParameterException("Invitation rejected");
+      throw new InvitationRejected("Invitation rejected");
     } else {
-      throw new InvalidAlgorithmParameterException("Invalid response: " + msg);
+      throw new InvitationRejected("Invalid response: " + msg);
     }
   }
 
@@ -118,11 +118,11 @@ public class BasicTcpServer implements TcpServer {
     return new Socket(addr, 10000);
   }
 
-  public GameSession acceptInvitation(Invite invite) throws InvalidAlgorithmParameterException, IOException {
+  public GameSession acceptInvitation(Invite invite) throws IOException {
     Socket sock = invite.getSock();
     if (!sock.isConnected()) {
-      log.warn("Socket is already closed");
-      throw new InvalidAlgorithmParameterException();
+      log.error("Socket is already closed");
+      throw new IOException("Socket is already closed");
     }
     // checkers:invitationOk
     sock.getOutputStream().write("checkers:invitationOk".getBytes());

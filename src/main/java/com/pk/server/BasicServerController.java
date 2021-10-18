@@ -3,13 +3,13 @@ package com.pk.server;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.nio.channels.ClosedChannelException;
-import java.security.InvalidAlgorithmParameterException;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import com.pk.server.exceptions.InvitationRejected;
 import com.pk.server.exceptions.MoveRejected;
 import com.pk.server.models.Invite;
 import com.pk.server.models.Move;
@@ -21,27 +21,28 @@ import lombok.Getter;
  * 
  */
 public class BasicServerController implements ServerController {
-  
+
   private GameSession gameSession = null;
   private ProbeResponder pResponder;
   private UdpServer udpServer;
   private TcpServer tcpServer;
   // FIXME threads num shouldn't be magic number
-  private ExecutorService executorService = Executors.newFixedThreadPool(1);
+  private ExecutorService executorService = Executors.newFixedThreadPool(2);
 
   private @Getter Future<Integer> futureResponder;
   private @Getter Future<Integer> futureTcp;
 
   /**
    * 
-   * @param bQueue placeholder
-   * @param ip placeholder
-   * @param port placeholder
-   * @param nick placeholder
-   * @param profileImg placeholder
-   * @throws IOException placeholder
+   * @param bQueue     queue which will contain all received invites
+   * @param ip         ip to bind
+   * @param port       port to bind
+   * @param nick       current player nickname
+   * @param profileImg current player profileImg b64 encoded
+   * @throws IOException if underling channel is closed.
    */
-  public BasicServerController(BlockingQueue<Invite> bQueue, String ip, Integer port, String nick, String profileImg) throws IOException {
+  public BasicServerController(BlockingQueue<Invite> bQueue, String ip, Integer port, String nick, String profileImg)
+      throws IOException {
     udpServer = new BasicUdpServer(new DatagramSocket(port));
     tcpServer = new BasicTcpServer(bQueue, ip, port);
     pResponder = new BasicProbeResponder(nick, profileImg);
@@ -71,13 +72,13 @@ public class BasicServerController implements ServerController {
   }
 
   @Override
-  public GameSession invite(Player player) throws InvalidAlgorithmParameterException, IOException {
+  public GameSession invite(Player player) throws InvitationRejected, IOException {
     return tcpServer.invite(player);
   }
 
   @Override
-  public GameSession acceptInvitation(Invite invite) throws IOException, InvalidAlgorithmParameterException {
+  public GameSession acceptInvitation(Invite invite) throws IOException {
     return tcpServer.acceptInvitation(invite);
   }
-  
+
 }

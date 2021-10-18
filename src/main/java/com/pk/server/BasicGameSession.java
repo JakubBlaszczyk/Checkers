@@ -50,7 +50,7 @@ public class BasicGameSession implements GameSession {
       int len = socket.getInputStream().read(buf);
       log.info("len: " + len);
       if (len == -1) {
-        //FIXME add clean up function
+        // FIXME add clean up function
         throw new IOException("Connection closed");
       }
       String msg = new String(buf, 0, len);

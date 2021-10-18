@@ -10,11 +10,9 @@ import java.util.Base64;
 
 import lombok.AllArgsConstructor;
 import lombok.Cleanup;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Getter
 @AllArgsConstructor
 public class BasicProbeResponder implements ProbeResponder {
   private String nick;
@@ -59,7 +57,8 @@ public class BasicProbeResponder implements ProbeResponder {
   }
 
   /**
-   * Receivce message from broadcast and return it via ds.
+   * Receive message from broadcast and return it via ds.
+   * 
    * @param ds input data source.
    * @return received message
    * @throws IOException placeholder
@@ -72,10 +71,12 @@ public class BasicProbeResponder implements ProbeResponder {
   }
 
   /**
+   * Creates DatagramPacket ready to send with probe response containing nickName
+   * and profileImg b64 encoded.
    * 
-   * @param msg placeholder
-   * @return placeholder
-   * @throws UnknownHostException placeholder
+   * @param msg message received from broadcast
+   * @return packet to send or null if msg does not contain valid probe
+   * @throws UnknownHostException never thrown (// TODO)
    */
   protected DatagramPacket prepareResponse(String msg) throws UnknownHostException {
     if (!verifyProbe(msg)) {

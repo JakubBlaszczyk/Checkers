@@ -1,9 +1,9 @@
 package com.pk.server;
 
 import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
 import java.util.concurrent.Callable;
 
+import com.pk.server.exceptions.InvitationRejected;
 import com.pk.server.models.Invite;
 import com.pk.server.models.Player;
 
@@ -17,14 +17,16 @@ public interface TcpServer extends Callable<Integer> {
    * @param player selected players invite
    * @return new instance of GameSession
    */
-  public GameSession invite(Player invite) throws InvalidAlgorithmParameterException, IOException ;
+  public GameSession invite(Player invite) throws InvitationRejected, IOException;
+
   /**
    * Method used to create GameSession to specified player.
    * 
    * @param invite selected players invitation.
    * @return new instance of GameSession.
    */
-  public GameSession acceptInvitation(Invite invite) throws InvalidAlgorithmParameterException, IOException;
+  public GameSession acceptInvitation(Invite invite) throws IOException;
+
   /**
    * Method used to close socket and selector used by Tcp server.
    * 

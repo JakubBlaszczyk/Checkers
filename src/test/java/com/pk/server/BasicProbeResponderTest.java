@@ -44,7 +44,7 @@ public class BasicProbeResponderTest {
     assertEquals("checkers:probe", msg);
 
     dp = pResponder.prepareResponse(msg);
-    String validResponse = String.format("checkers:probeResp %s %s", pResponder.getNick(), pResponder.getProfileImg());
+    String validResponse = String.format("checkers:probeResp %s %s", "nik", "dGVzdFN0cmluZw==");
     assertTrue(Arrays.equals(validResponse.getBytes(), dp.getData()));
     assertEquals(10000, dp.getPort());
     assertEquals(InetAddress.getByName("255.255.255.255"), dp.getAddress());

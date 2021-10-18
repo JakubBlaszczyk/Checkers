@@ -6,6 +6,7 @@ package com.pk;
 public class SuperMain {
   /**
    * Calls App main()
+   * 
    * @param args Arguments passed by command line
    */
   public static void main(String[] args) {
