@@ -22,6 +22,7 @@
     <git-commit-id-plugin.version>4.9.10</git-commit-id-plugin.version>
     <javafx.version>17.0.0.1</javafx.version>
     <javafx-maven-plugin.version>0.0.8</javafx-maven-plugin.version>
+    <delombok-plugin.version>1.18.20</delombok-plugin.version>
   </properties>
   <dependencies>
     <dependency>
@@ -238,7 +239,7 @@
       <plugin>
         <groupId>com.github.auties00</groupId>
         <artifactId>delombok-plugin</artifactId>
-        <version>1.18.20</version>
+        <version>${delombok-plugin.version}</version>
         <configuration>
           <rootDirectory>${project.build.sourceDirectory}</rootDirectory>
           <outputDirectory>${project.build.directory}/generated-sources/delombok</outputDirectory>
@@ -248,7 +249,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.3.1</version>
+        <version>${maven-javadoc-plugin.version}</version>
         <configuration>
           <sourcepath>${project.build.directory}/generated-sources/delombok</sourcepath>
         </configuration>
