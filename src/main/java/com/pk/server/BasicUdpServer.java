@@ -57,6 +57,7 @@ public class BasicUdpServer implements UdpServer {
     }
   }
 
+  // FIXME simplify parsing with Exception handler
   private List<Player> getActivePlayers(List<Packet> packets) {
     List<Player> players = new ArrayList<>();
     for (Packet packet : packets) {
@@ -69,8 +70,6 @@ public class BasicUdpServer implements UdpServer {
         log.warn(String.format("Invalid substring, string: %s, substring: %s", msg, msg.substring(0, 9)));
         continue;
       }
-      // _ == space, profileImg == base64
-      // checkers:resp_nick_profileImg
       log.info("Msg_pre: " + msg);
       msg = msg.substring(9);
       log.info("Msg_post: " + msg);
@@ -95,10 +94,22 @@ public class BasicUdpServer implements UdpServer {
     return players;
   }
 
+  /**
+   * Receive packet from socket
+   * 
+   * @param in buffer which will store received data
+   * @throws IOException thrown if socket is closed
+   */
   protected void recvPacket(DatagramPacket in) throws IOException {
     socket.receive(in);
   }
 
+  /**
+   * Send packet to socket
+   * 
+   * @param out buffer containing data
+   * @throws IOException thrown if socket is closed
+   */
   protected void sendPacket(DatagramPacket out) throws IOException {
     socket.send(out);
   }

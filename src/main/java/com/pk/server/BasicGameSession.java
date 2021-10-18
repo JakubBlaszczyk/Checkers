@@ -5,7 +5,6 @@ import java.net.Socket;
 import java.util.Base64;
 import java.util.concurrent.BlockingQueue;
 
-import com.pk.server.exceptions.ChatMsgRejected;
 import com.pk.server.exceptions.MoveRejected;
 import com.pk.server.models.Move;
 
@@ -23,7 +22,6 @@ public class BasicGameSession implements GameSession {
 
   @Override
   public void move(Move move) throws IOException, MoveRejected {
-    // checkers:move srcX srcY dstX dstY
     socket.getOutputStream().write(("checkers:move " + move.toSendableFormat()).getBytes());
     byte[] buf = new byte[100];
     for (;;) {
@@ -39,7 +37,7 @@ public class BasicGameSession implements GameSession {
   }
 
   @Override
-  public void chatSendMsg(String msg) throws IOException, ChatMsgRejected {
+  public void chatSendMsg(String msg) throws IOException {
     // checkers:msg MSG
     byte[] encodedMsg = Base64.getEncoder().encode(msg.getBytes());
     socket.getOutputStream().write(("checkers:msg " + new String(encodedMsg)).getBytes());

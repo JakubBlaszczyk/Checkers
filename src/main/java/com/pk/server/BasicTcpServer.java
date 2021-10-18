@@ -23,9 +23,6 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Class used to perform all actions on Tcp stream
- */
 @Slf4j
 public class BasicTcpServer implements TcpServer {
   private @Getter @Setter @NonNull BlockingQueue<Invite> bQueue;
@@ -34,6 +31,15 @@ public class BasicTcpServer implements TcpServer {
   private @Setter @NonNull String nick;
   private @Setter @NonNull String profileImg;
 
+  /**
+   * Creates instance of BasicTcpServer, configures selector and binds to the
+   * port.
+   * 
+   * @param bQueue queue which will be populated with received invitations
+   * @param ip     ip to bind to
+   * @param port   port to bind to
+   * @throws IOException placeholder
+   */
   public BasicTcpServer(BlockingQueue<Invite> bQueue, String ip, Integer port) throws IOException {
     this.bQueue = bQueue;
     selector = Selector.open();
@@ -48,6 +54,9 @@ public class BasicTcpServer implements TcpServer {
     selector.close();
   }
 
+  /**
+   * @throws Exception placeholder
+   */
   @Override
   public Integer call() throws Exception {
     SelectionKey key = null;
@@ -75,12 +84,6 @@ public class BasicTcpServer implements TcpServer {
     }
   }
 
-  /**
-   * Method used to create GameSession to specified player.
-   * 
-   * @param invite Selected players invite
-   * @return new instance of GameSession
-   */
   public GameSession invite(Player player) throws InvalidAlgorithmParameterException, IOException {
     Socket sock = openSocketToPlayer(player.getIp());
 
@@ -103,34 +106,18 @@ public class BasicTcpServer implements TcpServer {
     }
   }
 
+  /**
+   * Create TCP session to remote machine.
+   * 
+   * @param addr address to connect to.
+   * @return socket connected to player.
+   * @throws IOException thrown when addr points to invalid location or network is
+   *                     not available.
+   */
   protected Socket openSocketToPlayer(InetAddress addr) throws IOException {
     return new Socket(addr, 10000);
   }
 
-  public static int getBytesLen(ByteBuffer bb) {
-    int len = 0;
-    try {
-      byte[] arr = bb.array();
-      for (int i = 0;; ++i) {
-        int x = arr[i];
-        log.debug("ARR: " + x);
-        if (x != 0) {
-          len += 1;
-          continue;
-        }
-        return len;
-      }
-    } catch (Exception e) {
-      return len;
-    }
-  }
-
-  /**
-   * Method used to create GameSession to specified player.
-   * 
-   * @param invite Selected players invite
-   * @return new instance of GameSession
-   */
   public GameSession acceptInvitation(Invite invite) throws InvalidAlgorithmParameterException, IOException {
     Socket sock = invite.getSock();
     if (!sock.isConnected()) {
@@ -142,7 +129,15 @@ public class BasicTcpServer implements TcpServer {
     return new BasicGameSession(sock, new LinkedBlockingQueue<>(), new LinkedBlockingQueue<>());
   }
 
-  public void readInvite(SelectionKey key, BlockingQueue<Invite> bQueue) throws IOException {
+  /**
+   * Method used by main TCP loop to read received message and verify whether it
+   * is invitation or not.
+   * 
+   * @param key    placeholder
+   * @param bQueue queue where new invites are stored.
+   * @throws IOException placeholder
+   */
+  protected void readInvite(SelectionKey key, BlockingQueue<Invite> bQueue) throws IOException {
     SocketChannel sc = (SocketChannel) key.channel();
     ByteBuffer bb = ByteBuffer.allocate(1024);
     int len = sc.read(bb);
@@ -160,20 +155,20 @@ public class BasicTcpServer implements TcpServer {
 
   /**
    * Parse network message if correct type, extract nickname and profilePicture
-   * encoded in base64 and add it to invite queue
+   * encoded in base64 and add it to invite queue.
    * 
-   * @param msg Message received from interface
-   * @param sc  Socket from which message arrived
-   * @return Whether message was indeed invitation
+   * @param msg message received from interface.
+   * @param sc  socket from which message arrived.
+   * @return whether message was indeed invitation.
    * @throws IOException
    */
-  private boolean addNewInvite(SelectionKey key, String msg, SocketChannel sc, BlockingQueue<Invite> bQueue) throws IOException {
+  private boolean addNewInvite(SelectionKey key, String msg, SocketChannel sc, BlockingQueue<Invite> bQueue)
+      throws IOException {
     try {
       if (!msg.substring(0, 9).equals("checkers:")) {
         log.warn("Invalid substring: ", msg.substring(0, 9));
         return false;
       }
-      // checkers:invitationAsk nick profileImg
       msg = msg.substring(9);
       if (!msg.substring(0, 14).equals("invitationAsk ")) {
         log.info("Invalid substring: ", msg.substring(0, 14));

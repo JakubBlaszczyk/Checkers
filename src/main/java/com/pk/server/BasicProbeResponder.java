@@ -39,9 +39,13 @@ public class BasicProbeResponder implements ProbeResponder {
     this.profileImg = profileImg;
   }
 
+  /**
+   * 
+   */
   @Override
   public Integer call() throws Exception {
-    @Cleanup DatagramSocket ds = createSocket(10000);
+    @Cleanup
+    DatagramSocket ds = createSocket(10000);
     for (;;) {
       String msg = recvMsg(ds);
       DatagramPacket dp = prepareResponse(msg);
@@ -54,6 +58,12 @@ public class BasicProbeResponder implements ProbeResponder {
     }
   }
 
+  /**
+   * Receivce message from broadcast and return it via ds.
+   * @param ds input data source.
+   * @return received message
+   * @throws IOException placeholder
+   */
   protected String recvMsg(DatagramSocket ds) throws IOException {
     byte[] buf = new byte[100];
     DatagramPacket dp = new DatagramPacket(buf, buf.length);
@@ -61,6 +71,12 @@ public class BasicProbeResponder implements ProbeResponder {
     return new String(dp.getData(), 0, dp.getLength());
   }
 
+  /**
+   * 
+   * @param msg placeholder
+   * @return placeholder
+   * @throws UnknownHostException placeholder
+   */
   protected DatagramPacket prepareResponse(String msg) throws UnknownHostException {
     if (!verifyProbe(msg)) {
       return null;
