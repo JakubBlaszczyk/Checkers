@@ -27,9 +27,8 @@ public class BasicLogic implements Logic {
     ArrayList<PiecePosition> black = findAllBlack(board);
     ArrayList<Integer> positions;
 
-    positions = isOneProperMove(board);
-    isNonDiagonalMove(white, black);
-    
+    positions = findOneProperMove(board);
+
     if (Boolean.FALSE.equals(isKillMove(board))) {
       if (Boolean.TRUE.equals(wasKillMoveAvaliable(white, black))) {
         throw new MandatoryKillMove();
@@ -39,8 +38,11 @@ public class BasicLogic implements Logic {
     }
   }
 
-  private ArrayList<Integer> isOneProperMove(List<List<Piece>> board)
-      throws MoreThanOneMoveMade, MoveOnAlreadyTakenSpace {
+  private ArrayList<Integer> findOneProperMove(List<List<Piece>> board)
+      throws MoreThanOneMoveMade, MoveOnAlreadyTakenSpace, VerticalOrHorizontalMove  {
+    ArrayList<PiecePosition> white = findAllWhite(board);
+    ArrayList<PiecePosition> black = findAllBlack(board);
+    isNonDiagonalMove(white, black);
     return new ArrayList<>();
   }
 
@@ -58,21 +60,21 @@ public class BasicLogic implements Logic {
     for (int i = 0; i < this.board.size(); ++i) {
       for (int j = 0; j < this.board.get(i).size(); ++j) {
         switch (this.board.get(i).get(j)) {
-          case EMPTY:
-            result.append("0");
-            break;
-          case WHITE_KING:
-            result.append("I");
-            break;
-          case WHITE_PAWN:
-            result.append("W");
-            break;
-          case BLACK_PAWN:
-            result.append("B");
-            break;
-          case BLACK_KING:
-            result.append("X");
-            break;
+        case EMPTY:
+          result.append("0");
+          break;
+        case WHITE_KING:
+          result.append("I");
+          break;
+        case WHITE_PAWN:
+          result.append("W");
+          break;
+        case BLACK_PAWN:
+          result.append("B");
+          break;
+        case BLACK_KING:
+          result.append("X");
+          break;
         }
       }
       result.append("\n");
