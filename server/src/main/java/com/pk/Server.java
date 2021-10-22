@@ -10,18 +10,13 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
-
-import javax.management.RuntimeErrorException;
 
 import com.pk.models.Config;
 import com.pk.models.Player;
@@ -35,7 +30,6 @@ import lombok.extern.slf4j.Slf4j;
 // FIXME standarize messages, it's mess atm
 @Slf4j
 public class Server implements Callable<Integer> {
-  // private @Getter @Setter @NonNull BlockingQueue<Invite> bQueue;
   private Selector selector;
   private ServerSocketChannel serverSocketChannel;
   private Map<SocketChannel, SocketChannel> playersInGames;
@@ -61,7 +55,6 @@ public class Server implements Callable<Integer> {
     selector.close();
   }
 
-  // FIXME refactor this monster
   @Override
   public Integer call() throws Exception {
     SelectionKey key = null;
@@ -72,84 +65,133 @@ public class Server implements Callable<Integer> {
       if (selector.select() <= 0)
         continue;
       Set<SelectionKey> set = selector.selectedKeys();
-      Set<SelectionKey> set2 = new HashSet<SelectionKey>(set); 
       Iterator<SelectionKey> iterator = set.iterator();
       while (iterator.hasNext()) {
         key = iterator.next();
         iterator.remove();
         if (key.isAcceptable()) {
-          SocketChannel sc = serverSocketChannel.accept();
-          sc.configureBlocking(false);
-          SelectionKey tmp = sc.register(selector, SelectionKey.OP_READ);
-          tmpMap.put(tmp, sc);
-          log.info("Connection Accepted: " + sc.getLocalAddress());
-        }
-        if (key.isReadable()) {
-          // selector.
-          // FIXME add method to do it
-          SocketChannel sc = (SocketChannel) key.channel();
-          ByteBuffer bb = ByteBuffer.allocate(1024);
-          int len = sc.read(bb);
-          if (len <= 0) {
-            sc.close();
-            log.info("Connection closed");
+          try {
+            handleAccept();
+          } catch (IOException e) {
+            log.error("Accept error, terminating");
+            key.cancel();
             continue;
           }
-          String result = new String(bb.array(), 0, len).strip();
-          log.info("Message received: " + result + " \nMessage length: " + result.length());
-          if (result.startsWith("checkers:config ")) {
-            if (connectedPlayersMap.containsValue(sc)) {
-              sc.write(ByteBuffer.wrap("checkers:error user already configured".getBytes()));
-            }
-            Optional<Config> conf = parseConfigMessage(result.substring(16));
-            if (conf.isEmpty()) {
-              log.error("Got invalid config message, ignoring");
-              continue;
-            }
-            if (connectedPlayersMap.containsKey(conf.get().getNickname())) {
-              log.warn("User already present on server: " + conf.get().getNickname());
-              sc.write(ByteBuffer.wrap("checkers:error user already present".getBytes()));
-              continue;
-            }
-            connectedPlayersMap.put(conf.get().getNickname(), sc);
-            hashPlayers.add(new Player(conf.get().getNickname(), conf.get().getProfileImg()));
-            ByteBuffer src = ByteBuffer.wrap(transformPlayersListIntoBytes());
-            sc.write(src);
-          } else if (result.equals("checkers:randomGame")) {
-            if (!connectedPlayersMap.containsValue(sc)) {
-              sc.write(ByteBuffer.wrap("checkers:error user not configured".getBytes()));
-            }
-            // FIXME add random game setup
+        }
+        if (key.isReadable()) {
+          try {
+            handleReadMsg(key);
+          } catch (IOException e) {
+            log.error("Connection error, terminating");
             key.cancel();
-            // Optional<List<Socket>> sockets = findPlayersToRandomGame(sc, selector.selectedKeys().iterator());
-            Optional<List<Socket>> sockets = findPlayersToRandomGame(sc, set2);
-            if (sockets.isEmpty()) {
-              sc.write(ByteBuffer.wrap("checkers:no players are active :(".getBytes()));
-              continue;
-            }
-            // FIXME XD
-            List<Socket> tmp = sockets.get();
-            Thread th = new Thread(new SessionHandler(connectedPlayersMap.getKey(tmp.get(0)),
-                connectedPlayersMap.getKey(tmp.get(1)), tmp.get(0), tmp.get(1), connectedPlayersMap));
-            th.start();
-            tmp.get(0).getOutputStream().write("checkers:randomStart".getBytes());
-            tmp.get(0).getOutputStream().write("checkers:randomStart".getBytes());
-          } else {
-            log.warn("Got invalid message");
+            continue;
           }
         }
       }
     }
   }
 
-  // FIXME refactor it
-  // FIXME prevent calling to game already playing guy
-  // private Optional<List<Socket>> findPlayersToRandomGame(SocketChannel src, Iterator<SelectionKey> iterator) {
-  private Optional<List<Socket>> findPlayersToRandomGame(SocketChannel src, Set<SelectionKey> set2) {
+  private void handleAccept() throws IOException {
+    SocketChannel sc = serverSocketChannel.accept();
+    sc.configureBlocking(false);
+    SelectionKey tmp = sc.register(selector, SelectionKey.OP_READ);
+    tmpMap.put(tmp, sc);
+    log.info("Connection Accepted: " + sc.getLocalAddress());
+  }
+
+  private void handleReadMsg(SelectionKey key) throws IOException {
+    SocketChannel sc = (SocketChannel) key.channel();
+    ByteBuffer bb = ByteBuffer.allocate(1024);
+    int len = sc.read(bb);
+    if (len <= 0) {
+      sc.close();
+      log.info("Connection closed");
+      return;
+    }
+    String msg = new String(bb.array(), 0, len).strip();
+    log.info("Message received: " + msg + " \nMessage length: " + msg.length());
+    if (msg.startsWith("checkers:config ")) {
+      try {
+        handleConfig(sc, msg);
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    } else if (msg.equals("checkers:randomGame")) {
+      try {
+        handleRandomGame(key, sc);
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    } else {
+      log.warn("Got invalid message");
+    }
+  }
+
+  private void handleConfig(SocketChannel sc, String msg) throws IOException {
+    if (connectedPlayersMap.containsValue(sc)) {
+      sc.write(ByteBuffer.wrap("checkers:error user already configured".getBytes()));
+    }
+    Optional<Config> conf = parseConfigMessage(msg.substring(16));
+    if (conf.isEmpty()) {
+      log.error("Got invalid config message, ignoring");
+      return;
+    }
+    if (connectedPlayersMap.containsKey(conf.get().getNickname())) {
+      log.warn("User already present on server: " + conf.get().getNickname());
+      sc.write(ByteBuffer.wrap("checkers:error user already present".getBytes()));
+      return;
+    }
+    connectedPlayersMap.put(conf.get().getNickname(), sc);
+    hashPlayers.add(new Player(conf.get().getNickname(), conf.get().getProfileImg()));
+    ByteBuffer src = ByteBuffer.wrap(transformPlayersListIntoBytes());
+    sc.write(src);
+  }
+
+  private void handleRandomGame(SelectionKey key, SocketChannel sc) throws IOException {
+    if (!connectedPlayersMap.containsValue(sc)) {
+      sc.write(ByteBuffer.wrap("checkers:error user not configured".getBytes()));
+    }
+    key.cancel();
+    Optional<List<Socket>> sockets = findPlayersToRandomGame(sc);
+    if (sockets.isEmpty()) {
+      sc.write(ByteBuffer.wrap("checkers:no players are active :(".getBytes()));
+      return;
+    }
+    List<Socket> tmp = sockets.get();
+    Socket sOne = tmp.get(0);
+    Socket sTwo = tmp.get(1);
+    Thread th = new Thread(new SessionHandler(connectedPlayersMap.getKey(sOne), connectedPlayersMap.getKey(sTwo), sOne,
+        sTwo, connectedPlayersMap));
+    th.start();
+    sOne.getOutputStream().write("checkers:randomStart".getBytes());
+    sTwo.getOutputStream().write("checkers:randomStart".getBytes());
+  }
+
+  // private void handleInvite() {
+  // ;
+  // }
+
+  private Optional<List<Socket>> findPlayersToRandomGame(SocketChannel src) {
     if (connectedPlayersMap.size() == 1) {
       return Optional.empty();
     }
-    String srcNick = connectedPlayersMap.getKey(src);
+    SocketChannel dst = getRandomPlayerChannel(src);
+    SelectionKey key = tmpMap.getKey(dst);
+    key.cancel();
+    try {
+      src.configureBlocking(true);
+      dst.configureBlocking(true);
+    } catch (IOException e) {
+      log.error("configureBlocking throw IOException, socketChannel is not canceled (?)", e);
+      return Optional.empty();
+    }
+    return Optional.of(List.of(src.socket(), dst.socket()));
+  }
+  
+  // FIXME prevent calling to game already playing guy
+  private SocketChannel getRandomPlayerChannel(SocketChannel src) {
     SocketChannel dst = null;
     int idx = 0;
     boolean flag = false;
@@ -182,26 +224,7 @@ public class Server implements Callable<Integer> {
         idx++;
       }
     }
-    // Iterator<SelectionKey> iterator = set2.iterator();
-    // while (iterator.hasNext()) {
-    //   SelectionKey sk = iterator.next();
-    //   if (sk.channel() == dst) {
-    //     log.info("Found selection key");
-    //     sk.cancel();
-    //     break;
-    //   }
-    // }
-    SelectionKey key = tmpMap.getKey(dst);
-    key.cancel();
-    try {
-    src.configureBlocking(true);
-    // Zdycha
-    dst.configureBlocking(true);
-    } catch (IOException e) {
-    log.error("configureBlocking throw IOException ???", e);
-    return Optional.empty();
-    }
-    return Optional.of(List.of(src.socket(), dst.socket()));
+    return dst;
   }
 
   private byte[] transformPlayersListIntoBytes() {

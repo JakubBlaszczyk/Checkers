@@ -6,8 +6,6 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.channels.SocketChannel;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
