@@ -1,7 +1,7 @@
 package com.pk;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,7 +10,7 @@ import com.pk.logic.BasicLogic;
 import com.pk.logic.Logic;
 import com.pk.logic.Piece;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit test for simple App.
@@ -24,7 +24,7 @@ public class AppTest {
     assertTrue(true);
   }
 
-  @Test
+  @org.junit.jupiter.api.Test
   public void initializeLogicBoard() {
     List<Piece> exampleSmallBoard = new ArrayList<>(3);
     exampleSmallBoard.add(Piece.WHITE_PAWN);

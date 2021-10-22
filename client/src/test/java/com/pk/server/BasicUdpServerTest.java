@@ -53,7 +53,6 @@ public class BasicUdpServerTest {
 
   @Test
   public void testParsingCorrectResp() throws Exception {
-    // dGVzdA== <-> test
     byte[] bytes = "checkers:probeResp testNik dGVzdA==".getBytes();
     DatagramPacket receivedPacket = new DatagramPacket(bytes, bytes.length, InetAddress.getByName("192.168.0.105"),
         12345);

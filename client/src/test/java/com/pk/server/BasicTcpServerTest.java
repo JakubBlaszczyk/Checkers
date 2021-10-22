@@ -1,9 +1,9 @@
 package com.pk.server;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 
@@ -12,7 +12,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.nio.channels.SocketChannel;
 import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -26,13 +25,7 @@ import com.pk.server.models.Player;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({ BasicTcpServer.class, SocketChannel.class })
 public class BasicTcpServerTest {
   @Test
   public void testIfServerIsAcceptingConnections() throws Exception {

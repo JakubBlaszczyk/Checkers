@@ -26,6 +26,7 @@
     <javafx.version>17.0.0.1</javafx.version>
     <javafx-maven-plugin.version>0.0.8</javafx-maven-plugin.version>
     <delombok-plugin.version>1.18.20</delombok-plugin.version>
+    <commons-collections4.version>4.4</commons-collections4.version>
   </properties>
   <build>
     <pluginManagement> <!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->

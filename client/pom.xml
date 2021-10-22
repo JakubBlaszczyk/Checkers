@@ -13,19 +13,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.powermock</groupId>
-      <artifactId>powermock-module-junit4</artifactId>
-      <version>${powermock.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.powermock</groupId>
-      <artifactId>powermock-api-mockito2</artifactId>
-      <version>${powermock.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <version>${junit.version}</version>
@@ -105,7 +92,6 @@
   </dependencies>
   <build>
     <finalName>checkers-client</finalName>
-    <!-- <pluginManagement> -->
     <plugins>
       <plugin>
         <groupId>org.openjfx</groupId>
@@ -242,6 +228,5 @@
         </configuration>
       </plugin>
     </plugins>
-    <!-- </pluginManagement> -->
   </build>
 </project>
