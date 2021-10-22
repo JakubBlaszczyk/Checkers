@@ -61,6 +61,8 @@ public class BasicGameSession implements GameSession {
       } else if (type == MsgType.MOVE) {
         log.info("Got MOVE type");
         bQueueMoves.add(Move.fromString(msg.substring(14)));
+      } else if (type == MsgType.UNKNOWN) {
+        log.warn("Got unknown message: " + msg);
       }
     }
   }
