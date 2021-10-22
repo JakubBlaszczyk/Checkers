@@ -16,16 +16,16 @@ public class BasicLogic implements Logic {
     for (int i = 0; i < board.size(); ++i) {
       this.board.add(new ArrayList<>(board.get(i)));
     }
-    // analyze white and black positions
+    // analyze white and black positions for the first time
     this.white = findAllWhite(board);
     this.black = findAllBlack(board);
   }
 
   public void update(List<List<Piece>> board)
       throws MandatoryKillMove, VerticalOrHorizontalMove, MoreThanOneMoveMade, MoveOnAlreadyTakenSpace {
-    ArrayList<PiecePosition> white = findAllWhite(board);
-    ArrayList<PiecePosition> black = findAllBlack(board);
-    ArrayList<Integer> positions;
+    List<PiecePosition> white = findAllWhite(board);
+    List<PiecePosition> black = findAllBlack(board);
+    List<Integer> positions;
 
     positions = findOneProperMove(board);
 
@@ -38,10 +38,10 @@ public class BasicLogic implements Logic {
     }
   }
 
-  private ArrayList<Integer> findOneProperMove(List<List<Piece>> board)
-      throws MoreThanOneMoveMade, MoveOnAlreadyTakenSpace, VerticalOrHorizontalMove  {
-    ArrayList<PiecePosition> white = findAllWhite(board);
-    ArrayList<PiecePosition> black = findAllBlack(board);
+  private List<Integer> findOneProperMove(List<List<Piece>> board)
+      throws MoreThanOneMoveMade, MoveOnAlreadyTakenSpace, VerticalOrHorizontalMove {
+    List<PiecePosition> white = findAllWhite(board);
+    List<PiecePosition> black = findAllBlack(board);
     isNonDiagonalMove(white, black);
     return new ArrayList<>();
   }
@@ -82,8 +82,8 @@ public class BasicLogic implements Logic {
     return result.toString();
   }
 
-  private ArrayList<PiecePosition> findAllWhite(List<List<Piece>> board) {
-    ArrayList<PiecePosition> whiteLocal = new ArrayList<>();
+  private List<PiecePosition> findAllWhite(List<List<Piece>> board) {
+    List<PiecePosition> whiteLocal = new ArrayList<>();
     for (int i = 0; i < board.size(); ++i) {
       for (int j = 0; j < board.get(i).size(); ++j) {
         if (board.get(i).get(j).equals(Piece.WHITE_KING) || board.get(i).get(j).equals(Piece.WHITE_PAWN)) {
@@ -94,7 +94,7 @@ public class BasicLogic implements Logic {
     return whiteLocal;
   }
 
-  private ArrayList<PiecePosition> findAllBlack(List<List<Piece>> board) {
+  private List<PiecePosition> findAllBlack(List<List<Piece>> board) {
     ArrayList<PiecePosition> blackLocal = new ArrayList<>();
     for (int i = 0; i < board.size(); ++i) {
       for (int j = 0; j < board.get(i).size(); ++j) {
@@ -159,7 +159,7 @@ public class BasicLogic implements Logic {
     private Piece affiliation;
   }
 
-  private ArrayList<PiecePosition> white;
-  private ArrayList<PiecePosition> black;
-  private ArrayList<ArrayList<Piece>> board;
+  private List<PiecePosition> white;
+  private List<PiecePosition> black;
+  private List<List<Piece>> board;
 }
