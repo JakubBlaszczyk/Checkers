@@ -20,9 +20,9 @@ import lombok.Getter;
 /**
  * 
  */
-public class BasicServerController implements ServerController {
+public class LanServerController implements ServerController {
 
-  private GameSession gameSession = null;
+  // private GameSession gameSession = null;
   private ProbeResponder pResponder;
   private UdpServer udpServer;
   private TcpServer tcpServer;
@@ -41,10 +41,10 @@ public class BasicServerController implements ServerController {
    * @param profileImg current player profileImg b64 encoded
    * @throws IOException if underling channel is closed.
    */
-  public BasicServerController(BlockingQueue<Invite> bQueue, String ip, Integer port, String nick, String profileImg)
+  public LanServerController(BlockingQueue<Invite> bQueue, String ip, Integer port, String nick, String profileImg)
       throws IOException {
     udpServer = new BasicUdpServer(new DatagramSocket(port));
-    tcpServer = new BasicTcpServer(bQueue, ip, port);
+    tcpServer = new LanTcpServer(bQueue, ip, port);
     pResponder = new BasicProbeResponder(nick, profileImg);
     futureResponder = executorService.submit(pResponder);
     futureTcp = executorService.submit(tcpServer);
@@ -52,18 +52,20 @@ public class BasicServerController implements ServerController {
 
   @Override
   public void move(Move move) throws IOException, MoveRejected {
-    if (gameSession == null) {
-      throw new ClosedChannelException();
-    }
-    gameSession.move(move);
+    // FIXME
+    // if (gameSession == null) {
+    //   throw new ClosedChannelException();
+    // }
+    // gameSession.move(move);
   }
 
   @Override
   public void chatSendMsg(String msg) throws IOException {
-    if (gameSession == null) {
-      throw new ClosedChannelException();
-    }
-    gameSession.chatSendMsg(msg);
+    // FIXME
+    // if (gameSession == null) {
+    //   throw new ClosedChannelException();
+    // }
+    // gameSession.chatSendMsg(msg);
   }
 
   @Override
@@ -72,12 +74,12 @@ public class BasicServerController implements ServerController {
   }
 
   @Override
-  public GameSession invite(Player player) throws InvitationRejected, IOException {
+  public boolean invite(Player player) throws InvitationRejected, IOException {
     return tcpServer.invite(player);
   }
 
   @Override
-  public GameSession acceptInvitation(Invite invite) throws IOException {
+  public boolean acceptInvitation(Invite invite) throws IOException {
     return tcpServer.acceptInvitation(invite);
   }
 

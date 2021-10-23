@@ -1,10 +1,14 @@
 package com.pk.server;
 
 import java.io.IOException;
+import java.net.Socket;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 
 import com.pk.server.exceptions.InvitationRejected;
+import com.pk.server.exceptions.MoveRejected;
 import com.pk.server.models.Invite;
+import com.pk.server.models.Move;
 import com.pk.server.models.Player;
 
 /**
@@ -17,7 +21,7 @@ public interface TcpServer extends Callable<Integer> {
    * @param player selected players invite
    * @return new instance of GameSession
    */
-  public GameSession invite(Player invite) throws InvitationRejected, IOException;
+  public boolean invite(Player invite) throws InvitationRejected, IOException;
 
   /**
    * Method used to create GameSession to specified player.
@@ -25,7 +29,7 @@ public interface TcpServer extends Callable<Integer> {
    * @param invite selected players invitation.
    * @return new instance of GameSession.
    */
-  public GameSession acceptInvitation(Invite invite) throws IOException;
+  public boolean acceptInvitation(Invite invite) throws IOException;
 
   /**
    * Method used to close socket and selector used by Tcp server.
@@ -33,4 +37,27 @@ public interface TcpServer extends Callable<Integer> {
    * @throws IOException if socket or selector is already closed.
    */
   public void cleanup() throws IOException;
+  //////////////
+  /**
+   * Send move to player.
+   * 
+   * @param move move to send.
+   * @throws IOException  thrown if underlying channel is closed.
+   * @throws MoveRejected thrown if player responded in non accepted way.
+   */
+  public void move(Move move) throws IOException, MoveRejected;
+
+  /**
+   * Send message to player.
+   * 
+   * @param msg base64 encoded message to send.
+   * @throws IOException thrown if underlying channel is closed.
+   */
+  public void chatSendMsg(String msg) throws IOException;
+
+  public BlockingQueue<String> getBQueueMsgs();
+
+  public BlockingQueue<Move> getBQueueMoves();
+
+  public Socket getSocket();
 }

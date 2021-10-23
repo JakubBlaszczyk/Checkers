@@ -1,7 +1,6 @@
 package com.pk.server;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -10,12 +9,13 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
+import com.pk.server.LanTcpServer.MsgType;
 import com.pk.server.exceptions.InvitationRejected;
+import com.pk.server.exceptions.MoveRejected;
 import com.pk.server.models.Invite;
+import com.pk.server.models.Move;
 import com.pk.server.models.Player;
 
 import lombok.Getter;
@@ -24,34 +24,23 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class BasicTcpServer implements TcpServer {
+public class WebTcpServer implements TcpServer {
+  private Socket remotePlayer;
+  private BlockingQueue<String> bQueueMsgs;
+  private BlockingQueue<Move> bQueueMoves;
   private @Getter @Setter @NonNull BlockingQueue<Invite> bQueue;
   private Selector selector;
   private ServerSocketChannel serverSocketChannel;
   private @Setter @NonNull String nick;
   private @Setter @NonNull String profileImg;
 
-  /**
-   * Creates instance of BasicTcpServer, configures selector and binds to the
-   * port.
-   * 
-   * @param bQueue queue which will be populated with received invitations
-   * @param ip     ip to bind to
-   * @param port   port to bind to
-   * @throws IOException placeholder
-   */
-  public BasicTcpServer(BlockingQueue<Invite> bQueue, String ip, Integer port) throws IOException {
+  public WebTcpServer(BlockingQueue<Invite> bQueue, String ip, Integer port) throws IOException {
     this.bQueue = bQueue;
     selector = Selector.open();
     serverSocketChannel = ServerSocketChannel.open();
     serverSocketChannel.configureBlocking(false);
     serverSocketChannel.bind(new InetSocketAddress(ip, port));
     serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-  }
-
-  public void cleanup() throws IOException {
-    serverSocketChannel.close();
-    selector.close();
   }
 
   /**
@@ -66,8 +55,7 @@ public class BasicTcpServer implements TcpServer {
       }
       if (selector.select() <= 0)
         continue;
-      Set<SelectionKey> selectedKeys = selector.selectedKeys();
-      Iterator<SelectionKey> iterator = selectedKeys.iterator();
+      Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
       while (iterator.hasNext()) {
         key = iterator.next();
         iterator.remove();
@@ -78,55 +66,29 @@ public class BasicTcpServer implements TcpServer {
           log.info("Connection Accepted: " + sc.getLocalAddress());
         }
         if (key.isReadable()) {
+          SocketChannel sc = (SocketChannel) key.channel();
+          ByteBuffer bb = ByteBuffer.allocate(1024);
+          int len = sc.read(bb);
+          if (len <= 0) {
+            sc.close();
+            log.info("Connection closed");
+            continue;
+          }
+          String msg = new String(bb.array(), 0, len).strip();
+          MsgType type = getType(msg);
+          if (type == MsgType.CHAT) {
+            log.info("Got CHAT type");
+            bQueueMsgs.add(msg.substring(13));
+          } else if (type == MsgType.MOVE) {
+            log.info("Got MOVE type");
+            bQueueMoves.add(Move.fromString(msg.substring(14)));
+          } else if (type == MsgType.UNKNOWN) {
+            log.warn("Got unknown message: " + msg);
+          }
           readInvite(key, bQueue);
         }
       }
     }
-  }
-
-  public GameSession invite(Player player) throws InvitationRejected, IOException {
-    Socket sock = openSocketToPlayer(player.getIp());
-
-    if (!sock.isConnected()) {
-      log.error("Socket is already closed");
-      throw new IOException("Socket is already closed");
-    }
-    sock.getOutputStream().write(("checkers:invitationAsk " + nick + " " + profileImg).getBytes());
-    byte[] buf = new byte[100];
-    int len = sock.getInputStream().read(buf);
-    log.debug("Send len: " + len);
-    String msg = new String(buf, 0, len);
-    if (msg.equals("checkers:invitationOk")) {
-      log.info("Invitation accepted");
-      return new BasicGameSession(sock, new LinkedBlockingQueue<>(), new LinkedBlockingQueue<>());
-    } else if (msg.equals("checkers:invitationRejected")) {
-      throw new InvitationRejected("Invitation rejected");
-    } else {
-      throw new InvitationRejected("Invalid response: " + msg);
-    }
-  }
-
-  /**
-   * Create TCP session to remote machine.
-   * 
-   * @param addr address to connect to.
-   * @return socket connected to player.
-   * @throws IOException thrown when addr points to invalid location or network is
-   *                     not available.
-   */
-  protected Socket openSocketToPlayer(InetAddress addr) throws IOException {
-    return new Socket(addr, 10000);
-  }
-
-  public GameSession acceptInvitation(Invite invite) throws IOException {
-    Socket sock = invite.getSock();
-    if (!sock.isConnected()) {
-      log.error("Socket is already closed");
-      throw new IOException("Socket is already closed");
-    }
-    // checkers:invitationOk
-    sock.getOutputStream().write("checkers:invitationOk".getBytes());
-    return new BasicGameSession(sock, new LinkedBlockingQueue<>(), new LinkedBlockingQueue<>());
   }
 
   /**
@@ -196,4 +158,71 @@ public class BasicTcpServer implements TcpServer {
       return false;
     }
   }
+
+  private MsgType getType(String msg) {
+    log.info("Got msg: " + msg);
+    try {
+      if (msg.substring(0, 13).equals("checkers:msg ")) {
+        return MsgType.CHAT;
+      } else if (msg.substring(0, 14).equals("checkers:move ")) {
+        return MsgType.MOVE;
+      }
+    } catch (Exception e) {
+      log.info("Exception msg: " + e.getMessage());
+    }
+    return MsgType.UNKNOWN;
+  }
+
+  @Override
+  public boolean invite(Player invite) throws InvitationRejected, IOException {
+    remotePlayer.getOutputStream().write(("checkers:inviteAsk " + invite.getNick()).getBytes());
+    return false;
+  }
+
+  @Override
+  public boolean acceptInvitation(Invite invite) throws IOException {
+    remotePlayer.getOutputStream().write(("checkers:inviteOk").getBytes());
+    return false;
+  }
+
+  @Override
+  public void cleanup() throws IOException {
+    serverSocketChannel.close();
+    selector.close();
+  }
+
+  @Override
+  public void move(Move move) throws IOException, MoveRejected {
+    remotePlayer.getOutputStream().write(("checkers:move " + move.toSendableFormat()).getBytes());
+    byte[] tmp = new byte[100];
+    int len = remotePlayer.getInputStream().read(tmp);
+    if (len == 0) {
+      throw new IOException("Connection closed");
+    }
+    String msg = new String(tmp, 0, len);
+    if (!msg.equals("checkers:moveOk")) {
+      throw new MoveRejected("Invalid response: " + msg);
+    }
+  }
+
+  @Override
+  public void chatSendMsg(String msg) throws IOException {
+    remotePlayer.getOutputStream().write(msg.getBytes());
+  }
+
+  @Override
+  public BlockingQueue<String> getBQueueMsgs() {
+    return bQueueMsgs;
+  }
+
+  @Override
+  public BlockingQueue<Move> getBQueueMoves() {
+    return bQueueMoves;
+  }
+
+  @Override
+  public Socket getSocket() {
+    return remotePlayer;
+  }
+  
 }
