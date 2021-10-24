@@ -29,9 +29,8 @@ public class BasicLogic implements Logic {
       throws MandatoryKillMove, VerticalOrHorizontalMove, MoreThanOneMoveMade, OverlappingPieces {
     List<PiecePosition> white = findAllWhite(board);
     List<PiecePosition> black = findAllBlack(board);
-    List<Integer> positions;
 
-    positions = findOneProperMove(board);
+    findOneProperMove(board);
 
     // when there will be sucessful update then push this.board to this.boardOld
     this.boardOld = this.board;
@@ -46,11 +45,11 @@ public class BasicLogic implements Logic {
     List<PiecePosition> white = findAllWhite(board);
     List<PiecePosition> black = findAllBlack(board);
     Boolean wasKillMove;
-    Boolean isOneMove;
     // first check for rules violation then we can return proper move
     isNonDiagonalMove(white, black);
     isOverlappingMove(white, black);
     wasKillMove = wasKillMove(board);
+    isOneMove(white, black, wasKillMove);
     // if it wasn't kill move there is need to check MandatoryKillMove as this
     // condition haven't been accomplished
     if (Boolean.FALSE.equals(wasKillMove)) {
@@ -66,6 +65,65 @@ public class BasicLogic implements Logic {
   private Boolean isKillMove(List<List<Piece>> board) {
 
     return false;
+  }
+
+  private void isOneMove(List<PiecePosition> white, List<PiecePosition> black, Boolean wasKillMove)
+      throws MoreThanOneMoveMade {
+    Integer changeAmount = 0;
+    changeAmount += isOneMoveBlack(black);
+    changeAmount += isOneMoveWhite(white);
+
+    // We have to check for two changes total
+    // if number of changes exceeds those than there was more than one move
+    if (!(changeAmount == 2 || (changeAmount == 3 && wasKillMove))) {
+      throw new MoreThanOneMoveMade();
+    }
+  }
+
+  private Integer isOneMoveBlack(List<PiecePosition> black) {
+    Integer positionIndexNow;
+    Integer positionIndexBefore;
+    Boolean found = false;
+    Integer result = 0;
+    for (positionIndexBefore = 0; positionIndexBefore < this.black.size(); ++positionIndexBefore) {
+      for (positionIndexNow = 0; positionIndexNow < black.size(); ++positionIndexNow) {
+        if (this.black.get(positionIndexBefore).getX().equals(black.get(positionIndexNow).getX())
+            && this.black.get(positionIndexBefore).getY().equals(black.get(positionIndexNow).getY())) {
+          found = true;
+          break;
+        }
+      }
+      if (Boolean.TRUE.equals(found)) {
+        found = false;
+      } else {
+        ++result;
+        break;
+      }
+    }
+    return result;
+  }
+
+  private Integer isOneMoveWhite(List<PiecePosition> white) {
+    Integer positionIndexNow;
+    Integer positionIndexBefore;
+    Boolean found = false;
+    Integer result = 0;
+    for (positionIndexBefore = 0; positionIndexBefore < this.white.size(); ++positionIndexBefore) {
+      for (positionIndexNow = 0; positionIndexNow < white.size(); ++positionIndexNow) {
+        if (this.white.get(positionIndexBefore).getX().equals(white.get(positionIndexNow).getX())
+            && this.white.get(positionIndexBefore).getY().equals(white.get(positionIndexNow).getY())) {
+          found = true;
+          break;
+        }
+      }
+      if (Boolean.TRUE.equals(found)) {
+        found = false;
+      } else {
+        ++result;
+        break;
+      }
+    }
+    return result;
   }
 
   private void isOverlappingMove(List<PiecePosition> white, List<PiecePosition> black) throws OverlappingPieces {
