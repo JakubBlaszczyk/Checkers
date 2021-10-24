@@ -17,6 +17,8 @@ public interface Logic {
      * @throws VerticalOrHorizontalMove
      * 
      * @param board next state of a board
+     * 
+     * @return returns whos move is next, 0 when black 1 when white
      */
-    public void update(List<List<Piece>> board) throws MandatoryKillMove, VerticalOrHorizontalMove, MoreThanOneMoveMade, MoveOnAlreadyTakenSpace;
+    public Boolean update(List<List<Piece>> board) throws MandatoryKillMove, VerticalOrHorizontalMove, MoreThanOneMoveMade, MoveOnAlreadyTakenSpace;
 }
