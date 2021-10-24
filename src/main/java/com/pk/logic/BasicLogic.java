@@ -2,14 +2,12 @@ package com.pk.logic;
 
 import java.util.List;
 
-import javax.management.InvalidAttributeValueException;
-
 import java.util.ArrayList;
 
 import com.pk.logic.exceptions.BadBoardGiven;
 import com.pk.logic.exceptions.MandatoryKillMove;
 import com.pk.logic.exceptions.MoreThanOneMoveMade;
-import com.pk.logic.exceptions.MoveOnAlreadyTakenSpace;
+import com.pk.logic.exceptions.OverlappingPieces;
 import com.pk.logic.exceptions.VerticalOrHorizontalMove;
 
 public class BasicLogic implements Logic {
@@ -28,7 +26,7 @@ public class BasicLogic implements Logic {
   }
 
   public Boolean update(List<List<Piece>> board)
-      throws MandatoryKillMove, VerticalOrHorizontalMove, MoreThanOneMoveMade, MoveOnAlreadyTakenSpace {
+      throws MandatoryKillMove, VerticalOrHorizontalMove, MoreThanOneMoveMade, OverlappingPieces {
     List<PiecePosition> white = findAllWhite(board);
     List<PiecePosition> black = findAllBlack(board);
     List<Integer> positions;
@@ -44,12 +42,14 @@ public class BasicLogic implements Logic {
   }
 
   private List<Integer> findOneProperMove(List<List<Piece>> board)
-      throws MoreThanOneMoveMade, MoveOnAlreadyTakenSpace, VerticalOrHorizontalMove, MandatoryKillMove {
+      throws MoreThanOneMoveMade, VerticalOrHorizontalMove, MandatoryKillMove, OverlappingPieces {
     List<PiecePosition> white = findAllWhite(board);
     List<PiecePosition> black = findAllBlack(board);
     Boolean wasKillMove;
+    Boolean isOneMove;
     // first check for rules violation then we can return proper move
     isNonDiagonalMove(white, black);
+    isOverlappingMove(white, black);
     wasKillMove = wasKillMove(board);
     // if it wasn't kill move there is need to check MandatoryKillMove as this
     // condition haven't been accomplished
@@ -66,6 +66,48 @@ public class BasicLogic implements Logic {
   private Boolean isKillMove(List<List<Piece>> board) {
 
     return false;
+  }
+
+  private void isOverlappingMove(List<PiecePosition> white, List<PiecePosition> black) throws OverlappingPieces {
+    if (Boolean.TRUE.equals(isWhiteMove(white))) {
+      isOverlappingMoveWhite(white);
+    } else {
+      isOverlappingMoveBlack(black);
+    }
+  }
+
+  private void isOverlappingMoveWhite(List<PiecePosition> white) throws OverlappingPieces {
+    for (int i = 0; i < white.size(); ++i) {
+      for (int j = 0; j < this.black.size(); ++j) {
+        if (white.get(i).getX().equals(this.black.get(j).getX())
+            && white.get(i).getY().equals(this.black.get(j).getY())) {
+          throw new OverlappingPieces();
+        }
+      }
+      for (int k = 0; k < this.white.size(); ++k) {
+        if (white.get(i).getX().equals(this.white.get(k).getX())
+            && white.get(i).getY().equals(this.white.get(k).getY())) {
+          throw new OverlappingPieces();
+        }
+      }
+    }
+  }
+
+  private void isOverlappingMoveBlack(List<PiecePosition> black) throws OverlappingPieces {
+    for (int i = 0; i < black.size(); ++i) {
+      for (int j = 0; j < this.black.size(); ++j) {
+        if (black.get(i).getX().equals(this.black.get(j).getX())
+            && black.get(i).getY().equals(this.black.get(j).getY())) {
+          throw new OverlappingPieces();
+        }
+      }
+      for (int k = 0; k < this.black.size(); ++k) {
+        if (black.get(i).getX().equals(this.white.get(k).getX())
+            && black.get(i).getY().equals(this.white.get(k).getY())) {
+          throw new OverlappingPieces();
+        }
+      }
+    }
   }
 
   /*
@@ -87,11 +129,9 @@ public class BasicLogic implements Logic {
   }
 
   private Boolean isKillMoveAvaliable(List<PiecePosition> white) {
-    Integer whiteMove = -1;
     // We nned to have bordering pawns and with kings to check whole diagonals
     // Check for Kings
-    whiteMove = isWhiteMove(white);
-    if (whiteMove == 1) {
+    if (Boolean.TRUE.equals(isWhiteMove(white))) {
       if (Boolean.FALSE.equals(isKillMoveAvaliableWhiteKings())
           && Boolean.FALSE.equals(isKillMoveAvaliableWhitePawns())) {
         return false;
@@ -172,7 +212,7 @@ public class BasicLogic implements Logic {
       } else if (temp.equals(Piece.WHITE_KING) || temp.equals(Piece.WHITE_PAWN)) {
         return false;
       }
-    } catch (InvalidAttributeValueException e) {
+    } catch (IndexOutOfBoundsException e) {
       return false;
     }
     return false;
@@ -191,7 +231,7 @@ public class BasicLogic implements Logic {
       } else if (temp.equals(Piece.WHITE_KING) || temp.equals(Piece.WHITE_PAWN)) {
         return false;
       }
-    } catch (InvalidAttributeValueException e) {
+    } catch (IndexOutOfBoundsException e) {
       return false;
     }
     return false;
@@ -210,7 +250,7 @@ public class BasicLogic implements Logic {
       } else if (temp.equals(Piece.WHITE_KING) || temp.equals(Piece.WHITE_PAWN)) {
         return false;
       }
-    } catch (InvalidAttributeValueException e) {
+    } catch (IndexOutOfBoundsException e) {
       return false;
     }
     return false;
@@ -229,7 +269,7 @@ public class BasicLogic implements Logic {
       } else if (temp.equals(Piece.WHITE_KING) || temp.equals(Piece.WHITE_PAWN)) {
         return false;
       }
-    } catch (InvalidAttributeValueException e) {
+    } catch (IndexOutOfBoundsException e) {
       return false;
     }
     return false;
@@ -246,7 +286,7 @@ public class BasicLogic implements Logic {
       } else if (temp.equals(Piece.BLACK_KING) || temp.equals(Piece.BLACK_PAWN)) {
         return false;
       }
-    } catch (InvalidAttributeValueException e) {
+    } catch (IndexOutOfBoundsException e) {
       return false;
     }
     return false;
@@ -265,7 +305,7 @@ public class BasicLogic implements Logic {
       } else if (temp.equals(Piece.BLACK_KING) || temp.equals(Piece.BLACK_PAWN)) {
         return false;
       }
-    } catch (InvalidAttributeValueException e) {
+    } catch (IndexOutOfBoundsException e) {
       return false;
     }
     return false;
@@ -284,7 +324,7 @@ public class BasicLogic implements Logic {
       } else if (temp.equals(Piece.BLACK_KING) || temp.equals(Piece.BLACK_PAWN)) {
         return false;
       }
-    } catch (InvalidAttributeValueException e) {
+    } catch (IndexOutOfBoundsException e) {
       return false;
     }
     return false;
@@ -303,53 +343,54 @@ public class BasicLogic implements Logic {
       } else if (temp.equals(Piece.BLACK_KING) || temp.equals(Piece.BLACK_PAWN)) {
         return false;
       }
-    } catch (InvalidAttributeValueException e) {
+    } catch (IndexOutOfBoundsException e) {
       return false;
     }
     return false;
   }
 
   private Piece getPieceLeftUpOffset(List<List<Piece>> board, Integer x, Integer y, Integer offset)
-      throws InvalidAttributeValueException {
+      throws IndexOutOfBoundsException {
     if (x - offset >= 0 && y - offset >= 0) {
       return board.get(x).get(y);
     } else {
-      throw new InvalidAttributeValueException();
+      throw new IndexOutOfBoundsException();
     }
   }
 
   private Piece getPieceRightUpOffset(List<List<Piece>> board, Integer x, Integer y, Integer offset)
-      throws InvalidAttributeValueException {
+      throws IndexOutOfBoundsException {
     if (x + offset < board.size() && y - offset >= 0) {
       return board.get(x).get(y);
     } else {
-      throw new InvalidAttributeValueException();
+      throw new IndexOutOfBoundsException();
     }
   }
 
   private Piece getPieceRightDownOffset(List<List<Piece>> board, Integer x, Integer y, Integer offset)
-      throws InvalidAttributeValueException {
+      throws IndexOutOfBoundsException {
     if (x + offset < board.size() && y + offset < board.size()) {
       return board.get(x).get(y);
     } else {
-      throw new InvalidAttributeValueException();
+      throw new IndexOutOfBoundsException();
     }
   }
 
   private Piece getPieceLeftDownOffset(List<List<Piece>> board, Integer x, Integer y, Integer offset)
-      throws InvalidAttributeValueException {
+      throws IndexOutOfBoundsException {
     if (x + offset >= 0 && y + offset < board.size()) {
       return board.get(x).get(y);
     } else {
-      throw new InvalidAttributeValueException();
+      throw new IndexOutOfBoundsException();
     }
   }
 
-  private Integer isWhiteMove(List<PiecePosition> white) {
+  private Boolean isWhiteMove(List<PiecePosition> white) {
     Boolean found = false;
     for (int i = 0; i < this.white.size(); ++i) {
       for (int j = 0; j < white.size(); ++j) {
-        if (this.white.get(i).getX() == white.get(j).getX() && this.white.get(i).getY() == white.get(j).getX()) {
+        if (this.white.get(i).getX().equals(white.get(j).getX())
+            && this.white.get(i).getY().equals(white.get(j).getX())) {
           found = true;
           break;
         }
@@ -357,10 +398,10 @@ public class BasicLogic implements Logic {
       if (Boolean.TRUE.equals(found)) {
         found = false;
       } else {
-        return 1;
+        return true;
       }
     }
-    return 0;
+    return false;
   }
 
   public String toString() {

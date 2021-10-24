@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.pk.logic.exceptions.MandatoryKillMove;
 import com.pk.logic.exceptions.MoreThanOneMoveMade;
-import com.pk.logic.exceptions.MoveOnAlreadyTakenSpace;
+import com.pk.logic.exceptions.OverlappingPieces;
 import com.pk.logic.exceptions.VerticalOrHorizontalMove;
 
 public interface Logic {
@@ -20,5 +20,5 @@ public interface Logic {
      * 
      * @return returns whos move is next, 0 when black 1 when white
      */
-    public Boolean update(List<List<Piece>> board) throws MandatoryKillMove, VerticalOrHorizontalMove, MoreThanOneMoveMade, MoveOnAlreadyTakenSpace;
+    public Boolean update(List<List<Piece>> board) throws MandatoryKillMove, VerticalOrHorizontalMove, MoreThanOneMoveMade, OverlappingPieces;
 }
