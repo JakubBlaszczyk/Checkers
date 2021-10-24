@@ -40,6 +40,10 @@ public class BasicLogic implements Logic {
         // proceed with program and board update
       }
     }
+    // when there will be sucessful update then push this.board to this.boardOld
+    this.boardOld = this.board;
+    this.whiteOld = this.white;
+    this.blackOld = this.black;
   }
 
   private List<Integer> findOneProperMove(List<List<Piece>> board)
@@ -165,5 +169,8 @@ public class BasicLogic implements Logic {
 
   private List<PiecePosition> white;
   private List<PiecePosition> black;
+  private List<PiecePosition> whiteOld;
+  private List<PiecePosition> blackOld;
   private List<List<Piece>> board;
+  private List<List<Piece>> boardOld;
 }
