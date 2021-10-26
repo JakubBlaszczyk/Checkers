@@ -33,14 +33,11 @@ public class BasicLogic implements Logic {
     findOneProperMove(board);
 
     // when there will be sucessful update then push this.board to this.boardOld
-    this.boardOld = this.board;
-    this.whiteOld = this.white;
-    this.blackOld = this.black;
 
     return false;
   }
 
-  private List<Integer> findOneProperMove(List<List<Piece>> board)
+  private void findOneProperMove(List<List<Piece>> board)
       throws MoreThanOneMoveMade, VerticalOrHorizontalMove, MandatoryKillMove, OverlappingPieces {
     List<PiecePosition> white = findAllWhite(board);
     List<PiecePosition> black = findAllBlack(board);
@@ -48,26 +45,53 @@ public class BasicLogic implements Logic {
     // first check for rules violation then we can return proper move
     isNonDiagonalMove(white, black);
     isOverlappingMove(white, black);
-    wasKillMove = wasKillMove(board);
-    isOneMove(white, black, wasKillMove);
+    Boolean killMove = wasKillMove();
+    Boolean oneMove = isOneMove(white, black, killMove);
+    Boolean whiteMove = isWhiteMove(white);
+    Integer moveIndex = getMoveIndex(white, black, whiteMove);
+    Integer newBoardIndex = moveIndex / this.board.size();
+    Integer oldBoardIndex = moveIndex % this.board.size();
+    isForwardMove(white, black, whiteMove, killMove);
     // if it wasn't kill move there is need to check MandatoryKillMove as this
     // condition haven't been accomplished
-    if (Boolean.FALSE.equals(wasKillMove)) {
-      if (Boolean.TRUE.equals(isKillMoveAvaliable(white))) {
+    if (Boolean.FALSE.equals(killMove)) {
+      if (Boolean.TRUE.equals(isKillMoveAvaliable(whiteMove))) {
         throw new MandatoryKillMove();
       } else {
-
+        isOneTileMove(white, black, isKillMove(white, black));
       }
     }
-    return new ArrayList<>();
   }
 
-  private Boolean isKillMove(List<List<Piece>> board) {
-
-    return false;
+  /**
+   * Returns indecies of moved pawns. New board pawn is hidden in var +=
+   * this.board.size() * index. Old board pawn is hidden in var += index.
+   */
+  private Integer getMoveIndex(List<PiecePosition> white, List<PiecePosition> black, Boolean whiteMove) {
+    Boolean found = false;
+    Integer index = -1;
+    if (Boolean.TRUE.equals(whiteMove)) {
+      for (int i = 0; i < this.white.size(); ++i) {
+        for (int j = 0; j < white.size(); ++j) {
+          if (this.white.get(i).getX().equals(white.get(j).getX())
+              && this.white.get(i).getY().equals(white.get(j).getY())) {
+            found = true;
+            index = j;
+            break;
+          }
+        }
+        if (Boolean.TRUE.equals(found)) {
+          found = false;
+          index = -1;
+        } else {
+          return this.board.size() * index + i;
+        }
+      }
+    }
+    throw new RuntimeException();
   }
 
-  private void isOneMove(List<PiecePosition> white, List<PiecePosition> black, Boolean wasKillMove)
+  private Boolean isOneMove(List<PiecePosition> white, List<PiecePosition> black, Boolean wasKillMove)
       throws MoreThanOneMoveMade {
     Integer changeAmount = 0;
     changeAmount += isOneMoveBlack(black);
@@ -78,6 +102,7 @@ public class BasicLogic implements Logic {
     if (!(changeAmount == 2 || (changeAmount == 3 && wasKillMove))) {
       throw new MoreThanOneMoveMade();
     }
+    return true;
   }
 
   private Integer isOneMoveBlack(List<PiecePosition> black) {
@@ -175,10 +200,10 @@ public class BasicLogic implements Logic {
    *
    * @throws MandatoryKillMove
    */
-  private Boolean wasKillMove(List<List<Piece>> board) {
+  private Boolean wasKillMove() {
     for (int i = 0; i < this.board.size(); ++i) {
       for (int j = 0; j < this.board.get(i).size(); ++j) {
-        if (boardOld.get(i).get(j) == Piece.KILLED_BLACK || boardOld.get(i).get(j) == Piece.KILLED_WHITE) {
+        if (this.board.get(i).get(j) == Piece.KILLED_BLACK || this.board.get(i).get(j) == Piece.KILLED_WHITE) {
           return true;
         }
       }
@@ -186,10 +211,10 @@ public class BasicLogic implements Logic {
     return false;
   }
 
-  private Boolean isKillMoveAvaliable(List<PiecePosition> white) {
+  private Boolean isKillMoveAvaliable(Boolean whiteMove) {
     // We nned to have bordering pawns and with kings to check whole diagonals
     // Check for Kings
-    if (Boolean.TRUE.equals(isWhiteMove(white))) {
+    if (Boolean.TRUE.equals(whiteMove)) {
       if (Boolean.FALSE.equals(isKillMoveAvaliableWhiteKings())
           && Boolean.FALSE.equals(isKillMoveAvaliableWhitePawns())) {
         return false;
