@@ -8,12 +8,10 @@ import java.net.SocketTimeoutException;
 import java.nio.channels.SocketChannel;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.commons.collections4.BidiMap;
-
 import lombok.AllArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.BidiMap;
 
 @Slf4j
 @Setter
@@ -45,7 +43,7 @@ public class SessionHandler implements Runnable {
       return;
     }
     byte[] buf = new byte[100];
-    for (;;) {
+    for (; ; ) {
       if (!trySocket(iStreamFirst, oStreamSecond, firstNick, buf, 1)) {
         log.error("First socket is dead, terminating");
         return;
@@ -60,7 +58,7 @@ public class SessionHandler implements Runnable {
   private boolean trySocket(InputStream in, OutputStream out, String nick, byte[] buf, int idx) {
     int timeouts = 0;
     int errors = 0;
-    for (;;) {
+    for (; ; ) {
       if (timeouts == 2) {
         return true;
       } else if (errors == 2) {
@@ -86,7 +84,8 @@ public class SessionHandler implements Runnable {
         Optional<Socket> sock = verifyHostIsUp(nick);
         if (sock.isEmpty()) {
           // FIXME magic number
-          log.error("After 30 seconds host is still dead, sending msg to other side, and terminating");
+          log.error(
+              "After 30 seconds host is still dead, sending msg to other side, and terminating");
           try {
             // FIXME placeholder
             out.write("ERROR".getBytes(), 0, "ERROR".length());
@@ -115,16 +114,16 @@ public class SessionHandler implements Runnable {
           // FIXME add selector reference XD!
           sc.configureBlocking(true);
         } catch (IOException e) {
-          log.error("configureBlocking throw exception" ,e);
+          log.error("configureBlocking throw exception", e);
           return Optional.empty();
         }
         return Optional.of(sc.socket());
       }
       try {
         TimeUnit.SECONDS.sleep(1);
-      } catch (Exception ignore) {}
+      } catch (Exception ignore) {
+      }
     }
     return Optional.empty();
   }
-
 }

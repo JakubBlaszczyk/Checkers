@@ -1,16 +1,13 @@
 package com.pk.server;
 
-import java.io.IOException;
-import java.util.List;
-
 import com.pk.server.exceptions.InvitationRejected;
 import com.pk.server.exceptions.MoveRejected;
 import com.pk.server.models.Invite;
 import com.pk.server.models.Move;
 import com.pk.server.models.Player;
-
+import java.io.IOException;
+import java.util.List;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor
 public class WebServerController implements ServerController {
@@ -27,14 +24,14 @@ public class WebServerController implements ServerController {
   }
 
   @Override
-  public List<Player> findPlayers() {
-    // TODO Auto-generated method stub
+  public List<Player> getActivePlayers() throws IOException {
+    wTcpClient.getActivePlayers();
     return null;
   }
 
   @Override
-  public boolean invite(Player player) throws InvitationRejected, IOException {
-    // TODO Auto-generated method stub
+  public boolean invite(String inviteCode) throws InvitationRejected, IOException {
+    wTcpClient.invite(inviteCode);
     return false;
   }
 
@@ -43,5 +40,4 @@ public class WebServerController implements ServerController {
     // TODO Auto-generated method stub
     return false;
   }
-  
 }

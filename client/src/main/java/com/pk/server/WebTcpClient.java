@@ -4,14 +4,19 @@ import com.pk.server.exceptions.InvitationRejected;
 import com.pk.server.exceptions.MoveRejected;
 import com.pk.server.models.Invite;
 import com.pk.server.models.Move;
+import com.pk.server.models.Player;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetSocketAddress;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -25,12 +30,19 @@ public class WebTcpClient implements Callable<Integer> {
   private @NonNull BlockingQueue<Invite> bQueueInvites;
   private @Setter @NonNull String nick;
   private @Setter @NonNull String profileImg;
-  private String inviteCode;
+  private CompletableFuture<String> futureInviteCode;
+  private CompletableFuture<List<Player>> futurePlayersList;
   // 0 - waiting, -1 - rejected, 1 - accepted
   private @Getter int inviteAccepted;
 
   public WebTcpClient(
-      BlockingQueue<Invite> bQueueInvites, BlockingQueue<String> bQueueMsgs, BlockingQueue<Move> bQueueMoves, String nick, String profileImg)
+      BlockingQueue<Invite> bQueueInvites,
+      BlockingQueue<String> bQueueMsgs,
+      BlockingQueue<Move> bQueueMoves,
+      String addr,
+      Integer port,
+      String nick,
+      String profileImg)
       throws IOException {
     this.bQueueInvites = bQueueInvites;
     this.bQueueMsgs = bQueueMsgs;
@@ -38,24 +50,17 @@ public class WebTcpClient implements Callable<Integer> {
     this.nick = nick;
     this.profileImg = profileImg;
     this.inviteAccepted = 0;
+    remotePlayer = new Socket(InetAddress.getByName(addr), port);
+    futureInviteCode = new CompletableFuture<>();
+    futurePlayersList = null;
   }
 
-  /**
-   * Blocking method used to receive invitation code. Non blocking one can be achieved using inviteCode getter.
-   * @return
-   */
-  public String blockGetCode() {
-    while (true) {
-      try {
-        Thread.sleep(100);
-      } catch (InterruptedException ignore) {
-        return null;
-      }
-      if (!inviteCode.equals(""))
-        return inviteCode;
+  private List<String> parseMessages(String msg) {
+    if (msg.charAt(msg.length() - 1) == '!') {
+      msg = msg.substring(0, msg.length() - 1);
     }
+    return Arrays.asList(msg.split("!"));
   }
-
 
   /** @throws Exception placeholder */
   @Override
@@ -75,31 +80,53 @@ public class WebTcpClient implements Callable<Integer> {
         log.info("Connection closed");
         return 0;
       }
-      String msg = new String(buf, 0, len).strip();
-      log.info("Got msg: " + msg);
-      if (msg.equals("checkers:Hello")) {
-        os.write(String.format("checkers:config %s %s", nick, profileImg).getBytes());
-      } else if (msg.startsWith("checkers:confOk ")) {
-        log.info("Got config - OK, invite code: " + msg.substring(16));
-        inviteCode = msg.substring(16);
-      } else if (msg.startsWith("checkers:chat ")) {
-        log.info("Got CHAT type");
-        bQueueMsgs.add(msg.substring(14));
-      } else if (msg.startsWith("checkers:move ")) {
-        log.info("Got MOVE type");
-        bQueueMoves.add(Move.fromString(msg.substring(14)));
-      } else if (msg.startsWith("checkers:inviteAsk ")) {
-        if (!addNewInvite(msg.substring(19), bQueueInvites)) {
-          log.warn("Got invalid invitation, ignoring");
-        }
-      } else if (msg.startsWith("checkers:inviteOk ")) {
-        this.inviteAccepted = 1;
-      } else if (msg.startsWith("checkers:inviteRejected ")) {
-        this.inviteAccepted = -1;
-      } else {
-        log.warn("Got unknown message: " + msg);
+      String tmp = new String(buf, 0, len).strip();
+      for (String msg : parseMessages(tmp)) {
+        innerCall(msg, os);
       }
     }
+  }
+
+  private void innerCall(String msg, OutputStream os) throws IOException {
+    log.info("Got msg: " + msg);
+    if (msg.equals("checkers:Hello")) {
+      os.write(Utils.wrapMsg(String.format("config %s %s", nick, profileImg)));
+    } else if (msg.startsWith("checkers:confOk ")) {
+      log.info("Got config - OK, invite code: " + msg.substring(16));
+      futureInviteCode.complete(msg.substring(16));
+    } else if (msg.startsWith("checkers:chat ")) {
+      log.info("Got CHAT type");
+      bQueueMsgs.add(msg.substring(14));
+    } else if (msg.startsWith("checkers:move ")) {
+      log.info("Got MOVE type");
+      bQueueMoves.add(Move.fromString(msg.substring(14)));
+    } else if (msg.startsWith("checkers:inviteAsk ")) {
+      if (!addNewInvite(msg.substring(19), bQueueInvites)) {
+        log.warn("Got invalid invitation, ignoring");
+      }
+    } else if (msg.startsWith("checkers:inviteOk ")) {
+      this.inviteAccepted = 1;
+    } else if (msg.startsWith("checkers:onlinePlayers ")) {
+      parseOnlinePlayers(msg.substring(23));
+    } else if (msg.startsWith("checkers:inviteRejected ")) {
+      this.inviteAccepted = -1;
+    } else {
+      log.warn("Got unknown message: " + msg);
+    }
+  }
+
+  private void parseOnlinePlayers(String players) {
+    String[] items = players.split(" ");
+    if (items.length % 2 != 0) {
+      log.error("Error, invalid items size {}", items.length);
+      return;
+    }
+    List<Player> parsed = new ArrayList<>();
+
+    for (int i = 0; i < items.length; i += 2) {
+      parsed.add(new Player(null, items[i], items[i + 1]));
+    }
+    futurePlayersList.complete(parsed);
   }
 
   /**
@@ -133,18 +160,18 @@ public class WebTcpClient implements Callable<Integer> {
   }
 
   public boolean invite(String inviteCode) throws InvitationRejected, IOException {
-    remotePlayer.getOutputStream().write(("checkers:inviteAsk " + inviteCode).getBytes());
-    // byte[] buf = new byte[100];
-    // int len = remotePlayer.getInputStream().read(buf);
-    // if (len == 0) {
-    //   log.warn("Connection closed in invite handling???");
-    //   return false;
-    // }
+    remotePlayer.getOutputStream().write(Utils.wrapMsg("inviteAsk " + inviteCode));
     return true;
   }
 
+  public Future<List<Player>> getActivePlayers() throws IOException {
+    futurePlayersList = new CompletableFuture<>();
+    remotePlayer.getOutputStream().write(Utils.wrapMsg("getPlayers"));
+    return futurePlayersList;
+  }
+
   public boolean acceptInvitation(String inviteCode) throws IOException {
-    remotePlayer.getOutputStream().write(("checkers:inviteOk " + inviteCode).getBytes());
+    remotePlayer.getOutputStream().write(Utils.wrapMsg("inviteOk " + inviteCode));
     return true;
   }
 
@@ -153,20 +180,11 @@ public class WebTcpClient implements Callable<Integer> {
   }
 
   public void move(Move move) throws IOException, MoveRejected {
-    remotePlayer.getOutputStream().write(("checkers:move " + move.toSendableFormat()).getBytes());
-    // byte[] tmp = new byte[100];
-    // int len = remotePlayer.getInputStream().read(tmp);
-    // if (len == 0) {
-    //   throw new IOException("Connection closed");
-    // }
-    // String msg = new String(tmp, 0, len);
-    // if (!msg.equals("checkers:moveOk")) {
-    //   throw new MoveRejected("Invalid response: " + msg);
-    // }
+    remotePlayer.getOutputStream().write(Utils.wrapMsg("move " + move.toSendableFormat()));
   }
 
   public void chatSendMsg(String msg) throws IOException {
-    remotePlayer.getOutputStream().write(("checkers:chat " + msg).getBytes());
+    remotePlayer.getOutputStream().write(Utils.wrapMsg("chat " + msg));
   }
 
   public BlockingQueue<String> getBQueueMsgs() {
@@ -181,7 +199,7 @@ public class WebTcpClient implements Callable<Integer> {
     return remotePlayer;
   }
 
-  public String getInviteCode() {
-    return inviteCode;
+  public Future<String> getInviteCode() {
+    return futureInviteCode;
   }
 }

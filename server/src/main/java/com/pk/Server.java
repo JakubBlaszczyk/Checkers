@@ -1,5 +1,7 @@
 package com.pk;
 
+import com.pk.models.Config;
+import com.pk.models.Player;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -17,15 +19,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
-
-import com.pk.models.Config;
-import com.pk.models.Player;
-
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
-
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Server implements Callable<Integer> {
@@ -42,8 +39,13 @@ public class Server implements Callable<Integer> {
   // Players in game
   private Set<SocketChannel> allPlayersInGames;
 
-  public Server(String ip, Integer port, BidiMap<String, SocketChannel> connectedPlayersMap,
-      BidiMap<String, SocketChannel> inviteCodeMap, Set<Player> hashPlayers, Set<SocketChannel> allPlayersInGames)
+  public Server(
+      String ip,
+      Integer port,
+      BidiMap<String, SocketChannel> connectedPlayersMap,
+      BidiMap<String, SocketChannel> inviteCodeMap,
+      Set<Player> hashPlayers,
+      Set<SocketChannel> allPlayersInGames)
       throws IOException {
     selector = Selector.open();
     serverSocketChannel = ServerSocketChannel.open();
@@ -69,8 +71,7 @@ public class Server implements Callable<Integer> {
       if (Thread.currentThread().isInterrupted()) {
         return 0;
       }
-      if (selector.select() <= 0)
-        continue;
+      if (selector.select() <= 0) continue;
       Set<SelectionKey> set = selector.selectedKeys();
       Iterator<SelectionKey> iterator = set.iterator();
       while (iterator.hasNext()) {
@@ -110,7 +111,7 @@ public class Server implements Callable<Integer> {
     String nickToDelete = connectedPlayersMap.getKey(sc);
     connectedPlayersMap.remove(nickToDelete, sc);
     tmpMap.remove(key, sc);
-    for (Iterator<Player> it = hashPlayers.iterator(); it.hasNext();) {
+    for (Iterator<Player> it = hashPlayers.iterator(); it.hasNext(); ) {
       Player player = it.next();
       if (player.getNickname().equals(nickToDelete)) {
         it.remove();
@@ -132,7 +133,10 @@ public class Server implements Callable<Integer> {
       return;
     }
     String msg = new String(bb.array(), 0, len).strip();
-    log.info("Message received: " + msg + " \nMessage length: " + msg.length());
+    if (msg.charAt(msg.length() - 1) == '!') {
+      msg = msg.substring(0, msg.length() - 1);
+    }
+    log.info("Message received: <{}>, len: {}", msg, msg.length());
     if (msg.startsWith("checkers:config ")) {
       try {
         handleConfig(sc, msg);
@@ -191,8 +195,14 @@ public class Server implements Callable<Integer> {
       log.error("configureBlocking throw IOException, socketChannel is not canceled (?)", e);
       return;
     }
-    Thread th = new Thread(new SessionHandler(connectedPlayersMap.getKey(sc), connectedPlayersMap.getKey(channel),
-        sc.socket(), channel.socket(), connectedPlayersMap));
+    Thread th =
+        new Thread(
+            new SessionHandler(
+                connectedPlayersMap.getKey(sc),
+                connectedPlayersMap.getKey(channel),
+                sc.socket(),
+                channel.socket(),
+                connectedPlayersMap));
     th.start();
   }
 
@@ -221,8 +231,12 @@ public class Server implements Callable<Integer> {
       return;
     }
     String srcCode = inviteCodeMap.getKey(sc);
-    dest.write(ByteBuffer.wrap(
-        String.format("checkers:inviteAsk %s %s %s", play.getNickname(), play.getProfileImg(), srcCode).getBytes()));
+    dest.write(
+        ByteBuffer.wrap(
+            String.format(
+                    "checkers:inviteAsk %s %s %s",
+                    play.getNickname(), play.getProfileImg(), srcCode)
+                .getBytes()));
   }
 
   private void handleConfig(SocketChannel sc, String msg) throws IOException {
@@ -253,7 +267,7 @@ public class Server implements Callable<Integer> {
 
   public String generateInviteCode(SocketChannel sc) {
     String uuid = null;
-    for (;;) {
+    for (; ; ) {
       uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
       if (!inviteCodeMap.containsKey(uuid)) {
         break;
@@ -276,8 +290,14 @@ public class Server implements Callable<Integer> {
     List<Socket> tmp = sockets.get();
     Socket sOne = tmp.get(0);
     Socket sTwo = tmp.get(1);
-    Thread th = new Thread(new SessionHandler(connectedPlayersMap.getKey(sOne), connectedPlayersMap.getKey(sTwo), sOne,
-        sTwo, connectedPlayersMap));
+    Thread th =
+        new Thread(
+            new SessionHandler(
+                connectedPlayersMap.getKey(sOne),
+                connectedPlayersMap.getKey(sTwo),
+                sOne,
+                sTwo,
+                connectedPlayersMap));
     th.start();
     sOne.getOutputStream().write("checkers:randomStart".getBytes());
     sTwo.getOutputStream().write("checkers:randomStart".getBytes());
@@ -310,7 +330,7 @@ public class Server implements Callable<Integer> {
     int idx = 0;
     boolean flag = false;
     List<Integer> blacklist = new ArrayList<>();
-    for (;;) {
+    for (; ; ) {
       if (flag) {
         break;
       }
