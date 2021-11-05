@@ -1,13 +1,10 @@
 package com.pk.server.models;
 
 import java.io.IOException;
-
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * Wrapper class containing information about move.
- */
+/** Wrapper class containing information about move. */
 @Value
 @Slf4j
 public class Move {
@@ -18,7 +15,7 @@ public class Move {
 
   /**
    * Convert Move instance to space separated string.
-   * 
+   *
    * @return Returns Move as string where all values are separated by space.
    */
   public String toSendableFormat() {
@@ -38,7 +35,10 @@ public class Move {
       log.error("Invalid string passed, tokens len: " + tokens.length);
       throw new IOException("placeholder");
     }
-    return new Move(Integer.valueOf(tokens[0]), Integer.valueOf(tokens[1]), Integer.valueOf(tokens[2]),
+    return new Move(
+        Integer.valueOf(tokens[0]),
+        Integer.valueOf(tokens[1]),
+        Integer.valueOf(tokens[2]),
         Integer.valueOf(tokens[3]));
   }
 }

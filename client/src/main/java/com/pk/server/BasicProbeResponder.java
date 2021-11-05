@@ -7,7 +7,6 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Base64;
-
 import lombok.AllArgsConstructor;
 import lombok.Cleanup;
 import lombok.extern.slf4j.Slf4j;
@@ -37,14 +36,11 @@ public class BasicProbeResponder implements ProbeResponder {
     this.profileImg = profileImg;
   }
 
-  /**
-   * 
-   */
+  /** */
   @Override
   public Integer call() throws Exception {
-    @Cleanup
-    DatagramSocket ds = createSocket(10000);
-    for (;;) {
+    @Cleanup DatagramSocket ds = createSocket(10000);
+    for (; ; ) {
       String msg = recvMsg(ds);
       DatagramPacket dp = prepareResponse(msg);
       if (dp == null) {
@@ -58,7 +54,7 @@ public class BasicProbeResponder implements ProbeResponder {
 
   /**
    * Receive message from broadcast and return it via ds.
-   * 
+   *
    * @param ds input data source.
    * @return received message
    * @throws IOException placeholder
@@ -71,9 +67,9 @@ public class BasicProbeResponder implements ProbeResponder {
   }
 
   /**
-   * Creates DatagramPacket ready to send with probe response containing nickName
-   * and profileImg b64 encoded.
-   * 
+   * Creates DatagramPacket ready to send with probe response containing nickName and profileImg b64
+   * encoded.
+   *
    * @param msg message received from broadcast
    * @return packet to send or null if msg does not contain valid probe
    * @throws UnknownHostException never thrown (// TODO)
