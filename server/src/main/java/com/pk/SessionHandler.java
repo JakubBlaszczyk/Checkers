@@ -48,9 +48,11 @@ public class SessionHandler implements Runnable {
     for (;;) {
       if (!trySocket(iStreamFirst, oStreamSecond, firstNick, buf, 1)) {
         log.error("First socket is dead, terminating");
+        return;
       }
       if (!trySocket(iStreamSecond, oStreamFirst, secondNick, buf, 2)) {
         log.error("Second socket is dead, terminating");
+        return;
       }
     }
   }
@@ -66,17 +68,21 @@ public class SessionHandler implements Runnable {
       }
       try {
         int len = in.read(buf);
+        log.info("Got msg len: {}", len);
         // Connection closed, send termination msg
         if (len == 0) {
           log.info("PL_1");
           out.write("ERROR".getBytes(), 0, "ERROR".length());
           return false;
         }
+        log.info("Msg: {}", new String(buf, 0, len));
         out.write(buf, 0, len);
       } catch (SocketTimeoutException ignore) {
         timeouts++;
+        // log.info("Timeout++");
       } catch (IOException | IndexOutOfBoundsException e) {
         errors++;
+        log.info("Errors++");
         Optional<Socket> sock = verifyHostIsUp(nick);
         if (sock.isEmpty()) {
           // FIXME magic number
@@ -90,6 +96,7 @@ public class SessionHandler implements Runnable {
           return false;
         }
         // Set new socket, then try again
+        log.error("Recovering from error");
         if (idx == 1) {
           this.setSFirst(sock.get());
         } else {
@@ -105,6 +112,7 @@ public class SessionHandler implements Runnable {
       if (connectedPlayersMap.containsKey(nick)) {
         SocketChannel sc = connectedPlayersMap.get(nick);
         try {
+          // FIXME add selector reference XD!
           sc.configureBlocking(true);
         } catch (IOException e) {
           log.error("configureBlocking throw exception" ,e);

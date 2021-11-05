@@ -12,41 +12,48 @@ import java.security.InvalidAlgorithmParameterException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
 
 import com.pk.models.Config;
 import com.pk.models.Player;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 
 import lombok.extern.slf4j.Slf4j;
 
-// FIXME detect already closed players, another thread (???)
-// FIXME standarize messages, it's mess atm
 @Slf4j
 public class Server implements Callable<Integer> {
   private Selector selector;
   private ServerSocketChannel serverSocketChannel;
-  private Map<SocketChannel, SocketChannel> playersInGames;
+  // Nickname <-> SocketChannel
   private BidiMap<String, SocketChannel> connectedPlayersMap;
+  // key <-> SocketChannel
   private BidiMap<SelectionKey, SocketChannel> tmpMap;
+  // invite code <-> SocketChannel
+  private BidiMap<String, SocketChannel> inviteCodeMap;
+  // All active players
   private Set<Player> hashPlayers;
+  // Players in game
+  private Set<SocketChannel> allPlayersInGames;
 
-  public Server(String ip, Integer port, Map<SocketChannel, SocketChannel> playersInGames,
-      BidiMap<String, SocketChannel> connectedPlayersMap, Set<Player> hashPlayers) throws IOException {
+  public Server(String ip, Integer port, BidiMap<String, SocketChannel> connectedPlayersMap,
+      BidiMap<String, SocketChannel> inviteCodeMap, Set<Player> hashPlayers, Set<SocketChannel> allPlayersInGames)
+      throws IOException {
     selector = Selector.open();
     serverSocketChannel = ServerSocketChannel.open();
     serverSocketChannel.configureBlocking(false);
     serverSocketChannel.bind(new InetSocketAddress(ip, port));
     serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-    this.playersInGames = playersInGames;
     this.connectedPlayersMap = connectedPlayersMap;
+    this.inviteCodeMap = inviteCodeMap;
     this.hashPlayers = hashPlayers;
+    this.allPlayersInGames = allPlayersInGames;
     tmpMap = new DualHashBidiMap<>();
   }
 
@@ -84,7 +91,6 @@ public class Server implements Callable<Integer> {
           } catch (IOException e) {
             log.error("Connection error, terminating");
             key.cancel();
-            continue;
           }
         }
       }
@@ -96,7 +102,23 @@ public class Server implements Callable<Integer> {
     sc.configureBlocking(false);
     SelectionKey tmp = sc.register(selector, SelectionKey.OP_READ);
     tmpMap.put(tmp, sc);
+    sc.write(ByteBuffer.wrap("checkers:Hello".getBytes()));
     log.info("Connection Accepted: " + sc.getLocalAddress());
+  }
+
+  private void handleClosedConnection(SelectionKey key, SocketChannel sc) {
+    String nickToDelete = connectedPlayersMap.getKey(sc);
+    connectedPlayersMap.remove(nickToDelete, sc);
+    tmpMap.remove(key, sc);
+    for (Iterator<Player> it = hashPlayers.iterator(); it.hasNext();) {
+      Player player = it.next();
+      if (player.getNickname().equals(nickToDelete)) {
+        it.remove();
+      }
+    }
+    String uuid = inviteCodeMap.getKey(sc);
+    inviteCodeMap.remove(uuid, sc);
+    key.cancel();
   }
 
   private void handleReadMsg(SelectionKey key) throws IOException {
@@ -106,6 +128,7 @@ public class Server implements Callable<Integer> {
     if (len <= 0) {
       sc.close();
       log.info("Connection closed");
+      handleClosedConnection(key, sc);
       return;
     }
     String msg = new String(bb.array(), 0, len).strip();
@@ -114,14 +137,36 @@ public class Server implements Callable<Integer> {
       try {
         handleConfig(sc, msg);
       } catch (IOException e) {
-        // TODO Auto-generated catch block
         e.printStackTrace();
       }
     } else if (msg.equals("checkers:randomGame")) {
       try {
         handleRandomGame(key, sc);
       } catch (IOException e) {
-        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    } else if (msg.equals("checkers:getPlayers")) {
+      try {
+        sc.write(ByteBuffer.wrap(transformPlayersListIntoBytes()));
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    } else if (msg.startsWith("checkers:inviteAsk ")) {
+      try {
+        handleInviteAsk(sc, msg.substring(19));
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    } else if (msg.startsWith("checkers:inviteRejected ")) {
+      try {
+        handleInviteRejected(msg.substring(24));
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    } else if (msg.startsWith("checkers:inviteOk ")) {
+      try {
+        handleInviteOk(sc, msg.substring(18));
+      } catch (IOException e) {
         e.printStackTrace();
       }
     } else {
@@ -129,14 +174,71 @@ public class Server implements Callable<Integer> {
     }
   }
 
+  private void handleInviteRejected(String msg) throws IOException {
+    SocketChannel channel = inviteCodeMap.get(msg);
+    channel.write(ByteBuffer.wrap("checkers:inviteRejected".getBytes()));
+  }
+
+  private void handleInviteOk(SocketChannel sc, String msg) throws IOException {
+    SocketChannel channel = inviteCodeMap.get(msg);
+    channel.write(ByteBuffer.wrap(("checkers:inviteOk " + msg).getBytes()));
+    try {
+      sc.keyFor(selector).cancel();
+      sc.configureBlocking(true);
+      channel.keyFor(selector).cancel();
+      channel.configureBlocking(true);
+    } catch (IOException e) {
+      log.error("configureBlocking throw IOException, socketChannel is not canceled (?)", e);
+      return;
+    }
+    Thread th = new Thread(new SessionHandler(connectedPlayersMap.getKey(sc), connectedPlayersMap.getKey(channel),
+        sc.socket(), channel.socket(), connectedPlayersMap));
+    th.start();
+  }
+
+  private void handleInviteAsk(SocketChannel sc, String msg) throws IOException {
+    // FIXME magic number
+    if (msg.length() != 12) {
+      log.warn(String.format("Invalid msg length, got %s should be %s", msg.length(), 12));
+      return;
+    }
+    if (!inviteCodeMap.containsKey(msg)) {
+      log.warn("Message code not found");
+      sc.write(ByteBuffer.wrap("checkers:inviteErr".getBytes()));
+      return;
+    }
+    Player play = null;
+    SocketChannel dest = inviteCodeMap.get(msg);
+    String nick = connectedPlayersMap.getKey(sc);
+    for (Player player : hashPlayers) {
+      if (player.getNickname().equals(nick)) {
+        play = player;
+        break;
+      }
+    }
+    if (play == null) {
+      log.error("Player is null, not possible");
+      return;
+    }
+    String srcCode = inviteCodeMap.getKey(sc);
+    dest.write(ByteBuffer.wrap(
+        String.format("checkers:inviteAsk %s %s %s", play.getNickname(), play.getProfileImg(), srcCode).getBytes()));
+  }
+
   private void handleConfig(SocketChannel sc, String msg) throws IOException {
     if (connectedPlayersMap.containsValue(sc)) {
-      sc.write(ByteBuffer.wrap("checkers:error user already configured".getBytes()));
+      sc.write(ByteBuffer.wrap("checkers:confUserTaken".getBytes()));
     }
     Optional<Config> conf = parseConfigMessage(msg.substring(16));
     if (conf.isEmpty()) {
       log.error("Got invalid config message, ignoring");
       return;
+    }
+    Config config = conf.get();
+    if (!Base64.isBase64(config.getNickname())) {
+      sc.write(ByteBuffer.wrap("checkers:confBadNick".getBytes()));
+    } else if (!Base64.isBase64(config.getProfileImg())) {
+      sc.write(ByteBuffer.wrap("checkers:confBadImg".getBytes()));
     }
     if (connectedPlayersMap.containsKey(conf.get().getNickname())) {
       log.warn("User already present on server: " + conf.get().getNickname());
@@ -145,18 +247,30 @@ public class Server implements Callable<Integer> {
     }
     connectedPlayersMap.put(conf.get().getNickname(), sc);
     hashPlayers.add(new Player(conf.get().getNickname(), conf.get().getProfileImg()));
-    ByteBuffer src = ByteBuffer.wrap(transformPlayersListIntoBytes());
+    ByteBuffer src = ByteBuffer.wrap(("checkers:confOk " + generateInviteCode(sc)).getBytes());
     sc.write(src);
+  }
+
+  public String generateInviteCode(SocketChannel sc) {
+    String uuid = null;
+    for (;;) {
+      uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+      if (!inviteCodeMap.containsKey(uuid)) {
+        break;
+      }
+    }
+    inviteCodeMap.put(uuid, sc);
+    return uuid;
   }
 
   private void handleRandomGame(SelectionKey key, SocketChannel sc) throws IOException {
     if (!connectedPlayersMap.containsValue(sc)) {
-      sc.write(ByteBuffer.wrap("checkers:error user not configured".getBytes()));
+      sc.write(ByteBuffer.wrap("checkers:randomMissingConf".getBytes()));
     }
     key.cancel();
     Optional<List<Socket>> sockets = findPlayersToRandomGame(sc);
     if (sockets.isEmpty()) {
-      sc.write(ByteBuffer.wrap("checkers:no players are active :(".getBytes()));
+      sc.write(ByteBuffer.wrap("checkers:randomNoPlayers".getBytes()));
       return;
     }
     List<Socket> tmp = sockets.get();
@@ -169,12 +283,13 @@ public class Server implements Callable<Integer> {
     sTwo.getOutputStream().write("checkers:randomStart".getBytes());
   }
 
-  // private void handleInvite() {
-  // ;
-  // }
-
   private Optional<List<Socket>> findPlayersToRandomGame(SocketChannel src) {
     if (connectedPlayersMap.size() == 1) {
+      log.info("Only one player active");
+      return Optional.empty();
+    }
+    if (connectedPlayersMap.size() - allPlayersInGames.size() < 2) {
+      log.info("Only one player available");
       return Optional.empty();
     }
     SocketChannel dst = getRandomPlayerChannel(src);
@@ -189,8 +304,7 @@ public class Server implements Callable<Integer> {
     }
     return Optional.of(List.of(src.socket(), dst.socket()));
   }
-  
-  // FIXME prevent calling to game already playing guy
+
   private SocketChannel getRandomPlayerChannel(SocketChannel src) {
     SocketChannel dst = null;
     int idx = 0;
@@ -243,9 +357,8 @@ public class Server implements Callable<Integer> {
       // FIXME magic number
       if (parts.length != 2) {
         throw new InvalidAlgorithmParameterException(
-            String.format("Invalid len, should be: {}, is {}", 2, parts.length));
+            String.format("Invalid len, should be: %s, is %s", 2, parts.length));
       }
-      // FIXME add b64 handling
       return Optional.of(new Config(parts[0], parts[1]));
     } catch (Exception e) {
       return Optional.empty();

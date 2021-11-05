@@ -2,13 +2,10 @@ package com.pk;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +27,7 @@ public class App {
     String ip = prop.getProperty("server.ipBind");
     Integer port = Integer.parseInt(prop.getProperty("server.port"));
     try {
-      Server server = new Server(ip, port, new HashMap<>(), new DualHashBidiMap<>(), new HashSet<>());
+      Server server = new Server(ip, port, new DualHashBidiMap<>(), new DualHashBidiMap<>(), new HashSet<>(), new HashSet<>());
       server.call();
     } catch (IOException e) {
       log.error("Server is dead");

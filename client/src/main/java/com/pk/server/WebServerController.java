@@ -9,18 +9,21 @@ import com.pk.server.models.Invite;
 import com.pk.server.models.Move;
 import com.pk.server.models.Player;
 
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@AllArgsConstructor
 public class WebServerController implements ServerController {
+  WebTcpClient wTcpClient;
 
   @Override
   public void move(Move move) throws IOException, MoveRejected {
-    // TODO Auto-generated method stub
-    
+    wTcpClient.move(move);
   }
 
   @Override
   public void chatSendMsg(String msg) throws IOException {
-    // TODO Auto-generated method stub
-    
+    wTcpClient.chatSendMsg(msg);
   }
 
   @Override

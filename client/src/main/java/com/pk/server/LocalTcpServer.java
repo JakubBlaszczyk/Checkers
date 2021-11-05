@@ -9,19 +9,18 @@ import com.pk.server.exceptions.InvitationRejected;
 import com.pk.server.exceptions.MoveRejected;
 import com.pk.server.models.Invite;
 import com.pk.server.models.Move;
-import com.pk.server.models.Player;
 
 /**
  * Class used to perform all actions on Tcp stream.
  */
-public interface TcpServer extends Callable<Integer> {
+public interface LocalTcpServer extends Callable<Integer> {
   /**
    * Method used to create GameSession with specified player.
    * 
    * @param player selected players invite
    * @return new instance of GameSession
    */
-  public boolean invite(Player invite) throws InvitationRejected, IOException;
+  public boolean invite(Invite invite) throws InvitationRejected, IOException;
 
   /**
    * Method used to create GameSession to specified player.

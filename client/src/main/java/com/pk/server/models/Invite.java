@@ -12,4 +12,5 @@ public class Invite {
   String nick;
   String profileImg;
   Socket sock;
+  String code;
 }

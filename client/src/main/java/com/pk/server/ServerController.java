@@ -47,7 +47,7 @@ public interface ServerController {
    * @throws IOException                        thrown if underlying channel is
    *                                            closed.
    */
-  public GameSession invite(Player player) throws InvitationRejected, IOException;
+  public boolean invite(Player player) throws InvitationRejected, IOException;
 
   /**
    * 
@@ -57,5 +57,5 @@ public interface ServerController {
    *                                            closed.
    * @throws InvalidAlgorithmParameterException placeholder
    */
-  public GameSession acceptInvitation(Invite invite) throws IOException;
+  public boolean acceptInvitation(Invite invite) throws IOException;
 }
