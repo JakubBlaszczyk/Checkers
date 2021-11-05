@@ -1,5 +1,7 @@
 package com.pk.server;
 
+import com.pk.server.models.Packet;
+import com.pk.server.models.Player;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -8,10 +10,8 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.pk.server.models.Packet;
-import com.pk.server.models.Player;
-
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,7 +21,7 @@ public class BasicUdpServer implements UdpServer {
   private final DatagramSocket socket;
 
   @Override
-  public List<Player> findPlayers() {
+  public Future<List<Player>> getActivePlayers() {
     try {
       byte[] buf = new byte[BUFFER_SIZE];
       InetAddress hostAddress = InetAddress.getByName("255.255.255.255");
@@ -31,13 +31,14 @@ public class BasicUdpServer implements UdpServer {
       log.info("Sending probe");
       sendPacket(out);
       socket.setSoTimeout(TIMEOUT);
-      return getActivePlayers(listenBroadcast(dp));
+      return CompletableFuture.completedFuture(getActivePlayers(listenBroadcast(dp)));
     } catch (SocketException e) {
       log.error("Socket closed ", e);
+      return CompletableFuture.failedFuture(e);
     } catch (IOException e) {
       log.error("IOException", e);
+      return CompletableFuture.failedFuture(e);
     }
-    return new ArrayList<>();
   }
 
   private List<Packet> listenBroadcast(DatagramPacket dp) {
@@ -67,7 +68,9 @@ public class BasicUdpServer implements UdpServer {
         continue;
       }
       if (!msg.substring(0, 9).equals("checkers:")) {
-        log.warn(String.format("Invalid substring, string: %s, substring: %s", msg, msg.substring(0, 9)));
+        log.warn(
+            String.format(
+                "Invalid substring, string: %s, substring: %s", msg, msg.substring(0, 9)));
         continue;
       }
       log.info("Msg_pre: " + msg);
@@ -75,7 +78,9 @@ public class BasicUdpServer implements UdpServer {
       log.info("Msg_post: " + msg);
       log.info("Substring: ", msg.substring(9, 13));
       if (!msg.substring(0, 10).equals("probeResp ")) {
-        log.warn(String.format("Invalid substring, string: %s, substring: %s", msg, msg.substring(0, 9)));
+        log.warn(
+            String.format(
+                "Invalid substring, string: %s, substring: %s", msg, msg.substring(0, 9)));
         continue;
       }
       String[] items = msg.substring(10).split(" ");
@@ -96,7 +101,7 @@ public class BasicUdpServer implements UdpServer {
 
   /**
    * Receive packet from socket
-   * 
+   *
    * @param in buffer which will store received data
    * @throws IOException thrown if socket is closed
    */
@@ -106,7 +111,7 @@ public class BasicUdpServer implements UdpServer {
 
   /**
    * Send packet to socket
-   * 
+   *
    * @param out buffer containing data
    * @throws IOException thrown if socket is closed
    */

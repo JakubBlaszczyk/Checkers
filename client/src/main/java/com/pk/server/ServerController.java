@@ -2,12 +2,12 @@ package com.pk.server;
 
 import com.pk.server.exceptions.InvitationRejected;
 import com.pk.server.exceptions.MoveRejected;
-import com.pk.server.models.Invite;
 import com.pk.server.models.Move;
 import com.pk.server.models.Player;
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.List;
+import java.util.concurrent.Future;
 
 /** Main networking interface, containing all that is needed to pass data via network */
 public interface ServerController {
@@ -33,7 +33,7 @@ public interface ServerController {
    *
    * @return Active players.
    */
-  public List<Player> getActivePlayers() throws IOException;
+  public Future<List<Player>> getActivePlayers() throws IOException;
 
   /**
    * Invite player to game.
@@ -43,13 +43,13 @@ public interface ServerController {
    * @throws InvalidAlgorithmParameterException placeholder
    * @throws IOException thrown if underlying channel is closed.
    */
-  public boolean invite(String inviteCode) throws InvitationRejected, IOException;
+  public Future<Boolean> invite(String inviteCode) throws InvitationRejected, IOException;
 
   /**
-   * @param invite players invitation.
+   * @param invite player invitation code.
    * @return created session with player. If cannot create will return null.
    * @throws IOException thrown if underlying channel is closed.
    * @throws InvalidAlgorithmParameterException placeholder
    */
-  public boolean acceptInvitation(Invite invite) throws IOException;
+  public boolean acceptInvitation(String inviteCode) throws IOException;
 }

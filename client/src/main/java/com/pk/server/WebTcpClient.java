@@ -32,6 +32,7 @@ public class WebTcpClient implements Callable<Integer> {
   private @Setter @NonNull String profileImg;
   private CompletableFuture<String> futureInviteCode;
   private CompletableFuture<List<Player>> futurePlayersList;
+  private CompletableFuture<Boolean> futureInviteAccepted;
   // 0 - waiting, -1 - rejected, 1 - accepted
   private @Getter int inviteAccepted;
 
@@ -49,10 +50,10 @@ public class WebTcpClient implements Callable<Integer> {
     this.bQueueMoves = bQueueMoves;
     this.nick = nick;
     this.profileImg = profileImg;
-    this.inviteAccepted = 0;
     remotePlayer = new Socket(InetAddress.getByName(addr), port);
     futureInviteCode = new CompletableFuture<>();
     futurePlayersList = null;
+    futureInviteAccepted = null;
   }
 
   private List<String> parseMessages(String msg) {
@@ -105,11 +106,11 @@ public class WebTcpClient implements Callable<Integer> {
         log.warn("Got invalid invitation, ignoring");
       }
     } else if (msg.startsWith("checkers:inviteOk ")) {
-      this.inviteAccepted = 1;
+      futureInviteAccepted.complete(true);
+    } else if (msg.startsWith("checkers:inviteRejected ")) {
+      futureInviteAccepted.complete(false);
     } else if (msg.startsWith("checkers:onlinePlayers ")) {
       parseOnlinePlayers(msg.substring(23));
-    } else if (msg.startsWith("checkers:inviteRejected ")) {
-      this.inviteAccepted = -1;
     } else {
       log.warn("Got unknown message: " + msg);
     }
@@ -159,9 +160,10 @@ public class WebTcpClient implements Callable<Integer> {
     }
   }
 
-  public boolean invite(String inviteCode) throws InvitationRejected, IOException {
+  public Future<Boolean> invite(String inviteCode) throws InvitationRejected, IOException {
+    futureInviteAccepted = new CompletableFuture<>();
     remotePlayer.getOutputStream().write(Utils.wrapMsg("inviteAsk " + inviteCode));
-    return true;
+    return futureInviteAccepted;
   }
 
   public Future<List<Player>> getActivePlayers() throws IOException {

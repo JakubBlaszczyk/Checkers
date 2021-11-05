@@ -2,11 +2,11 @@ package com.pk.server;
 
 import com.pk.server.exceptions.InvitationRejected;
 import com.pk.server.exceptions.MoveRejected;
-import com.pk.server.models.Invite;
 import com.pk.server.models.Move;
 import com.pk.server.models.Player;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Future;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
@@ -24,20 +24,17 @@ public class WebServerController implements ServerController {
   }
 
   @Override
-  public List<Player> getActivePlayers() throws IOException {
-    wTcpClient.getActivePlayers();
-    return null;
+  public Future<List<Player>> getActivePlayers() throws IOException {
+    return wTcpClient.getActivePlayers();
   }
 
   @Override
-  public boolean invite(String inviteCode) throws InvitationRejected, IOException {
-    wTcpClient.invite(inviteCode);
-    return false;
+  public Future<Boolean> invite(String inviteCode) throws InvitationRejected, IOException {
+    return wTcpClient.invite(inviteCode);
   }
 
   @Override
-  public boolean acceptInvitation(Invite invite) throws IOException {
-    // TODO Auto-generated method stub
-    return false;
+  public boolean acceptInvitation(String inviteCode) throws IOException {
+    return wTcpClient.acceptInvitation(inviteCode);
   }
 }

@@ -1,31 +1,26 @@
 package com.pk.server;
 
-import java.io.IOException;
-import java.net.DatagramSocket;
-import java.nio.channels.ClosedChannelException;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
 import com.pk.server.exceptions.InvitationRejected;
 import com.pk.server.exceptions.MoveRejected;
 import com.pk.server.models.Invite;
 import com.pk.server.models.Move;
 import com.pk.server.models.Player;
-
+import java.io.IOException;
+import java.net.DatagramSocket;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import lombok.Getter;
 
-/**
- * 
- */
+/** */
 public class LanServerController implements ServerController {
 
-  // private GameSession gameSession = null;
   private ProbeResponder pResponder;
   private UdpServer udpServer;
-  private TcpServer tcpServer;
+  private LocalTcpServer tcpServer;
   // FIXME threads num shouldn't be magic number
   private ExecutorService executorService = Executors.newFixedThreadPool(2);
 
@@ -33,18 +28,18 @@ public class LanServerController implements ServerController {
   private @Getter Future<Integer> futureTcp;
 
   /**
-   * 
-   * @param bQueue     queue which will contain all received invites
-   * @param ip         ip to bind
-   * @param port       port to bind
-   * @param nick       current player nickname
+   * @param bQueue queue which will contain all received invites
+   * @param ip ip to bind
+   * @param port port to bind
+   * @param nick current player nickname
    * @param profileImg current player profileImg b64 encoded
    * @throws IOException if underling channel is closed.
    */
-  public LanServerController(BlockingQueue<Invite> bQueue, String ip, Integer port, String nick, String profileImg)
+  public LanServerController(
+      BlockingQueue<Invite> bQueue, String ip, Integer port, String nick, String profileImg)
       throws IOException {
     udpServer = new BasicUdpServer(new DatagramSocket(port));
-    tcpServer = new LanTcpServer(bQueue, ip, port);
+    tcpServer = new LanTcpServer(bQueue, ip, port, new HashMap<>());
     pResponder = new BasicProbeResponder(nick, profileImg);
     futureResponder = executorService.submit(pResponder);
     futureTcp = executorService.submit(tcpServer);
@@ -52,35 +47,26 @@ public class LanServerController implements ServerController {
 
   @Override
   public void move(Move move) throws IOException, MoveRejected {
-    // FIXME
-    // if (gameSession == null) {
-    //   throw new ClosedChannelException();
-    // }
-    // gameSession.move(move);
+    tcpServer.move(move);
   }
 
   @Override
   public void chatSendMsg(String msg) throws IOException {
-    // FIXME
-    // if (gameSession == null) {
-    //   throw new ClosedChannelException();
-    // }
-    // gameSession.chatSendMsg(msg);
+    tcpServer.chatSendMsg(msg);
   }
 
   @Override
-  public List<Player> findPlayers() {
-    return udpServer.findPlayers();
+  public Future<List<Player>> getActivePlayers() throws IOException {
+    return udpServer.getActivePlayers();
   }
 
   @Override
-  public boolean invite(Player player) throws InvitationRejected, IOException {
-    return tcpServer.invite(player);
+  public Future<Boolean> invite(String inviteCode) throws InvitationRejected, IOException {
+    return tcpServer.invite(inviteCode);
   }
 
   @Override
-  public boolean acceptInvitation(Invite invite) throws IOException {
-    return tcpServer.acceptInvitation(invite);
+  public boolean acceptInvitation(String inviteCode) throws IOException {
+    return tcpServer.acceptInvitation(inviteCode);
   }
-
 }
