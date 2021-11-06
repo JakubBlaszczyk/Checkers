@@ -1,4 +1,4 @@
-package com.pk.server.models;
+package com.pk.lanserver.models;
 
 import java.net.InetAddress;
 import lombok.Value;

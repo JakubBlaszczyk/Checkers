@@ -1,13 +1,14 @@
-package com.pk.server;
+package com.pk.lanserver;
 
-import com.pk.server.exceptions.InvitationRejected;
-import com.pk.server.exceptions.MoveRejected;
-import com.pk.server.models.Move;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+
+import com.pk.lanserver.exceptions.InvitationRejected;
+import com.pk.lanserver.exceptions.MoveRejected;
+import com.pk.lanserver.models.Move;
 
 /** Class used to perform all actions on Tcp stream. */
 public interface LocalTcpServer extends Callable<Integer> {
@@ -56,4 +57,6 @@ public interface LocalTcpServer extends Callable<Integer> {
   public BlockingQueue<Move> getBQueueMoves();
 
   public Socket getSocket();
+
+  public Future<String> getInviteCode();
 }

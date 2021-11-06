@@ -1,4 +1,4 @@
-package com.pk.server;
+package com.pk.lanserver;
 
 public class Utils {
   private Utils() {}

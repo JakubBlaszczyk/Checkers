@@ -1,11 +1,12 @@
-package com.pk.server;
+package com.pk.lanserver;
 
-import com.pk.server.models.Player;
+import com.pk.lanserver.models.Player;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 /** Class used to perform all actions on Udp side. */
-public interface UdpServer {
+public interface UdpServer extends Callable<Integer> {
   /** Socket timeout interval. */
   public static final int TIMEOUT = 5000;
   /** Socket input/output buffer size. */
@@ -19,4 +20,8 @@ public interface UdpServer {
    * @return list of all players found in LAN
    */
   public Future<List<Player>> getActivePlayers();
+
+  public void setNick(String nick);
+
+  public void setProfileImg(String profileImg);
 }

@@ -1,4 +1,4 @@
-package com.pk.server.models;
+package com.pk.lanserver.models;
 
 import java.io.IOException;
 import lombok.Value;

@@ -1,9 +1,5 @@
-package com.pk.server;
+package com.pk.lanserver;
 
-import com.pk.server.exceptions.InvitationRejected;
-import com.pk.server.exceptions.MoveRejected;
-import com.pk.server.models.Invite;
-import com.pk.server.models.Move;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -20,6 +16,12 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+
+import com.pk.lanserver.exceptions.InvitationRejected;
+import com.pk.lanserver.exceptions.MoveRejected;
+import com.pk.lanserver.models.Invite;
+import com.pk.lanserver.models.Move;
+
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -30,13 +32,14 @@ public class LanTcpServer implements LocalTcpServer {
   private Socket remotePlayer;
   private BlockingQueue<String> bQueueMsgs;
   private BlockingQueue<Move> bQueueMoves;
-  private @Getter @Setter @NonNull BlockingQueue<Invite> bQueue;
+  private @Getter @Setter @NonNull BlockingQueue<Invite> bQueueInvites;
   private Selector selector;
   private ServerSocketChannel serverSocketChannel;
   private @Setter @NonNull String nick;
   private @Setter @NonNull String profileImg;
   // invCode -> Socket
   private Map<String, Socket> mapInvToSock;
+  private String ip;
 
   /**
    * Creates instance of BasicTcpServer, configures selector and binds to the port.
@@ -47,14 +50,26 @@ public class LanTcpServer implements LocalTcpServer {
    * @throws IOException placeholder
    */
   public LanTcpServer(
-      BlockingQueue<Invite> bQueue, String ip, Integer port, Map<String, Socket> mapInvToSock)
+      BlockingQueue<Invite> bQueueInvites,
+      BlockingQueue<String> bQueueMsgs,
+      BlockingQueue<Move> bQueueMoves,
+      String ip,
+      Integer port,
+      String nick,
+      String profileImg,
+      Map<String, Socket> mapInvToSock)
       throws IOException {
-    this.bQueue = bQueue;
+    this.bQueueInvites = bQueueInvites;
+    this.bQueueMsgs = bQueueMsgs;
+    this.bQueueMoves = bQueueMoves;
     selector = Selector.open();
     serverSocketChannel = ServerSocketChannel.open();
     serverSocketChannel.configureBlocking(false);
     serverSocketChannel.bind(new InetSocketAddress(ip, port));
     serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+    this.profileImg = profileImg;
+    this.nick = nick;
+    this.ip = ip;
   }
 
   public void cleanup() throws IOException {
@@ -100,7 +115,7 @@ public class LanTcpServer implements LocalTcpServer {
           } else {
             log.warn("Got unknown message: " + msg);
           }
-          readInvite(key, bQueue);
+          readInvite(key, bQueueInvites);
         }
       }
     }
@@ -108,21 +123,13 @@ public class LanTcpServer implements LocalTcpServer {
 
   private InetAddress inviteCodeToIp(String inv) throws UnknownHostException {
     return InetAddress.getByName(
-        inv.charAt(0)
-            + inv.charAt(1)
-            + inv.charAt(2)
+        String.valueOf(Integer.parseInt(inv.substring(0, 3)))
             + "."
-            + inv.charAt(3)
-            + inv.charAt(4)
-            + inv.charAt(5)
+            + Integer.parseInt(inv.substring(3, 6))
             + "."
-            + inv.charAt(6)
-            + inv.charAt(7)
-            + inv.charAt(8)
+            + Integer.parseInt(inv.substring(6, 9))
             + "."
-            + inv.charAt(9)
-            + inv.charAt(10)
-            + inv.charAt(11));
+            + Integer.parseInt(inv.substring(9, 12)));
   }
 
   public Future<Boolean> invite(String inviteCode) throws InvitationRejected, IOException {
@@ -240,6 +247,24 @@ public class LanTcpServer implements LocalTcpServer {
       log.warn("Exception: ", e);
       return false;
     }
+  }
+
+  public Future<String> getInviteCode() {
+    return CompletableFuture.completedFuture(ipToInvCode());
+  }
+
+  private String ipToInvCode() {
+    StringBuilder sb = new StringBuilder();
+    for (String part : ip.split("\\.")) {
+      if (part.length() == 3) {
+        sb.append(part);
+      } else if (part.length() == 2) {
+        sb.append("0" + part);
+      } else {
+        sb.append("00" + part);
+      }
+    }
+    return sb.toString();
   }
 
   @Override

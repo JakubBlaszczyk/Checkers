@@ -1,12 +1,14 @@
-package com.pk.server;
+package com.pk.lanserver;
 
-import com.pk.server.exceptions.InvitationRejected;
-import com.pk.server.exceptions.MoveRejected;
-import com.pk.server.models.Move;
-import com.pk.server.models.Player;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Future;
+
+import com.pk.lanserver.exceptions.InvitationRejected;
+import com.pk.lanserver.exceptions.MoveRejected;
+import com.pk.lanserver.models.Move;
+import com.pk.lanserver.models.Player;
+
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
@@ -36,5 +38,10 @@ public class WebServerController implements ServerController {
   @Override
   public boolean acceptInvitation(String inviteCode) throws IOException {
     return wTcpClient.acceptInvitation(inviteCode);
+  }
+
+  @Override
+  public Future<String> getInviteCode() {
+    return wTcpClient.getInviteCode();
   }
 }

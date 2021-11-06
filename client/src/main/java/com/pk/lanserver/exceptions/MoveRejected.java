@@ -1,4 +1,4 @@
-package com.pk.server.exceptions;
+package com.pk.lanserver.exceptions;
 
 /**
  * Checked exception thrown to indicate that error occurred while transferring new Move to Player

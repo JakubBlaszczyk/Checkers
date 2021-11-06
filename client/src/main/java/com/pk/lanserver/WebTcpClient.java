@@ -1,10 +1,5 @@
-package com.pk.server;
+package com.pk.lanserver;
 
-import com.pk.server.exceptions.InvitationRejected;
-import com.pk.server.exceptions.MoveRejected;
-import com.pk.server.models.Invite;
-import com.pk.server.models.Move;
-import com.pk.server.models.Player;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -17,7 +12,13 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import lombok.Getter;
+
+import com.pk.lanserver.exceptions.InvitationRejected;
+import com.pk.lanserver.exceptions.MoveRejected;
+import com.pk.lanserver.models.Invite;
+import com.pk.lanserver.models.Move;
+import com.pk.lanserver.models.Player;
+
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -33,8 +34,6 @@ public class WebTcpClient implements Callable<Integer> {
   private CompletableFuture<String> futureInviteCode;
   private CompletableFuture<List<Player>> futurePlayersList;
   private CompletableFuture<Boolean> futureInviteAccepted;
-  // 0 - waiting, -1 - rejected, 1 - accepted
-  private @Getter int inviteAccepted;
 
   public WebTcpClient(
       BlockingQueue<Invite> bQueueInvites,
@@ -125,7 +124,8 @@ public class WebTcpClient implements Callable<Integer> {
     List<Player> parsed = new ArrayList<>();
 
     for (int i = 0; i < items.length; i += 2) {
-      parsed.add(new Player(null, items[i], items[i + 1]));
+      // TODO check it
+      parsed.add(new Player(null, items[i], items[i + 1], null));
     }
     futurePlayersList.complete(parsed);
   }

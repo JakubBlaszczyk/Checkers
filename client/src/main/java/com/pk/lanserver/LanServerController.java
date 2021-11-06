@@ -1,14 +1,16 @@
-package com.pk.server;
+package com.pk.lanserver;
 
-import com.pk.server.exceptions.InvitationRejected;
-import com.pk.server.exceptions.MoveRejected;
-import com.pk.server.models.Invite;
-import com.pk.server.models.Move;
-import com.pk.server.models.Player;
+import com.pk.lanserver.exceptions.InvitationRejected;
+import com.pk.lanserver.exceptions.MoveRejected;
+import com.pk.lanserver.models.Invite;
+import com.pk.lanserver.models.Move;
+import com.pk.lanserver.models.Player;
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,14 +19,12 @@ import lombok.Getter;
 
 /** */
 public class LanServerController implements ServerController {
-
-  private ProbeResponder pResponder;
   private UdpServer udpServer;
   private LocalTcpServer tcpServer;
   // FIXME threads num shouldn't be magic number
   private ExecutorService executorService = Executors.newFixedThreadPool(2);
 
-  private @Getter Future<Integer> futureResponder;
+  private @Getter Future<Integer> futureUdp;
   private @Getter Future<Integer> futureTcp;
 
   /**
@@ -36,12 +36,18 @@ public class LanServerController implements ServerController {
    * @throws IOException if underling channel is closed.
    */
   public LanServerController(
-      BlockingQueue<Invite> bQueue, String ip, Integer port, String nick, String profileImg)
+      BlockingQueue<Invite> bQI,
+      BlockingQueue<String> bQS,
+      BlockingQueue<Move> bQM,
+      String ip,
+      Integer port,
+      String nick,
+      String profileImg,
+      Map<String, Socket> mapInvToSock)
       throws IOException {
-    udpServer = new BasicUdpServer(new DatagramSocket(port));
-    tcpServer = new LanTcpServer(bQueue, ip, port, new HashMap<>());
-    pResponder = new BasicProbeResponder(nick, profileImg);
-    futureResponder = executorService.submit(pResponder);
+    udpServer = new BasicUdpServer(nick, profileImg);
+    tcpServer = new LanTcpServer(bQI, bQS, bQM, ip, port, "dDI=", "dDI=", new HashMap<>());
+    futureUdp = executorService.submit(udpServer);
     futureTcp = executorService.submit(tcpServer);
   }
 
@@ -68,5 +74,10 @@ public class LanServerController implements ServerController {
   @Override
   public boolean acceptInvitation(String inviteCode) throws IOException {
     return tcpServer.acceptInvitation(inviteCode);
+  }
+
+  @Override
+  public Future<String> getInviteCode() {
+    return tcpServer.getInviteCode();
   }
 }
