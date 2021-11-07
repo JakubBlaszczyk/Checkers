@@ -40,13 +40,14 @@ public class LanServerController implements ServerController {
       BlockingQueue<String> bQS,
       BlockingQueue<Move> bQM,
       String ip,
+      String localIp,
       Integer port,
       String nick,
       String profileImg,
       Map<String, Socket> mapInvToSock)
       throws IOException {
-    udpServer = new BasicUdpServer(nick, profileImg);
-    tcpServer = new LanTcpServer(bQI, bQS, bQM, ip, port, "dDI=", "dDI=", new HashMap<>());
+    udpServer = new BasicUdpServer(nick, profileImg, 10000);
+    tcpServer = new LanTcpServer(bQI, bQS, bQM, ip, localIp, port, "dDI=", "dDI=", new HashMap<>());
     futureUdp = executorService.submit(udpServer);
     futureTcp = executorService.submit(tcpServer);
   }

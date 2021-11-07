@@ -1,5 +1,9 @@
 package com.pk.lanserver;
 
+import com.pk.lanserver.exceptions.InvitationRejected;
+import com.pk.lanserver.exceptions.MoveRejected;
+import com.pk.lanserver.models.Invite;
+import com.pk.lanserver.models.Move;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -16,12 +20,6 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-
-import com.pk.lanserver.exceptions.InvitationRejected;
-import com.pk.lanserver.exceptions.MoveRejected;
-import com.pk.lanserver.models.Invite;
-import com.pk.lanserver.models.Move;
-
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -39,7 +37,7 @@ public class LanTcpServer implements LocalTcpServer {
   private @Setter @NonNull String profileImg;
   // invCode -> Socket
   private Map<String, Socket> mapInvToSock;
-  private String ip;
+  private String localIp;
 
   /**
    * Creates instance of BasicTcpServer, configures selector and binds to the port.
@@ -54,6 +52,7 @@ public class LanTcpServer implements LocalTcpServer {
       BlockingQueue<String> bQueueMsgs,
       BlockingQueue<Move> bQueueMoves,
       String ip,
+      String localIp,
       Integer port,
       String nick,
       String profileImg,
@@ -65,11 +64,11 @@ public class LanTcpServer implements LocalTcpServer {
     selector = Selector.open();
     serverSocketChannel = ServerSocketChannel.open();
     serverSocketChannel.configureBlocking(false);
-    serverSocketChannel.bind(new InetSocketAddress(ip, port));
+    serverSocketChannel.bind(new InetSocketAddress(port));
     serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
     this.profileImg = profileImg;
     this.nick = nick;
-    this.ip = ip;
+    this.localIp = localIp;
   }
 
   public void cleanup() throws IOException {
@@ -167,6 +166,7 @@ public class LanTcpServer implements LocalTcpServer {
    * @throws IOException thrown when addr points to invalid location or network is not available.
    */
   protected Socket openSocketToPlayer(InetAddress addr) throws IOException {
+    log.info("TCP connecting to {}", addr.getHostAddress());
     return new Socket(addr, 10000);
   }
 
@@ -255,7 +255,7 @@ public class LanTcpServer implements LocalTcpServer {
 
   private String ipToInvCode() {
     StringBuilder sb = new StringBuilder();
-    for (String part : ip.split("\\.")) {
+    for (String part : localIp.split("\\.")) {
       if (part.length() == 3) {
         sb.append(part);
       } else if (part.length() == 2) {

@@ -17,19 +17,24 @@ import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import lombok.Cleanup;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@RequiredArgsConstructor
 public class BasicUdpServer implements UdpServer {
-  private @NonNull String nick;
-  private @NonNull String profileImg;
+  private String nick;
+  private String profileImg;
+  private DatagramSocket ds;
+  private Integer port;
   private CompletableFuture<List<Player>> futureActivePlayers = null;
   private Instant start = null;
   private Vector<Player> qActivePlayers = null;
+
+  BasicUdpServer(String nick, String profileImg, Integer port) throws SocketException {
+    setNick(nick);
+    setProfileImg(profileImg);
+    this.port = port;
+    ds = createSocket(port);
+  }
 
   public void setNick(String nick) {
     if (nick.length() == 0) {
@@ -53,8 +58,6 @@ public class BasicUdpServer implements UdpServer {
   /** */
   @Override
   public Integer call() throws Exception {
-    // FIXME magic number
-    @Cleanup DatagramSocket ds = createSocket(10000);
     ds.setSoTimeout(500);
     for (; ; ) {
       try {
@@ -151,6 +154,15 @@ public class BasicUdpServer implements UdpServer {
 
   @Override
   public Future<List<Player>> getActivePlayers() {
+    try {
+      String msg = "checkers:probe";
+      DatagramPacket dp =
+          new DatagramPacket(
+              msg.getBytes(), msg.length(), InetAddress.getByName("255.255.255.255"), port);
+      ds.send(dp);
+    } catch (IOException e) {
+      return CompletableFuture.failedFuture(e);
+    }
     qActivePlayers = new Vector<>();
     futureActivePlayers = new CompletableFuture<>();
     start = Instant.now();
