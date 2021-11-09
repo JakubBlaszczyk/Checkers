@@ -51,14 +51,13 @@ public class BasicLogic implements Logic {
     Integer moveIndex = getMoveIndex(white, black, whiteMove);
     Integer newBoardIndex = moveIndex / this.board.size();
     Integer oldBoardIndex = moveIndex % this.board.size();
-    isForwardMove(white, black, whiteMove, killMove);
+    isForwardMove(white, black, newBoardIndex, oldBoardIndex, whiteMove, killMove);
     // if it wasn't kill move there is need to check MandatoryKillMove as this
     // condition haven't been accomplished
     if (Boolean.FALSE.equals(killMove)) {
       if (Boolean.TRUE.equals(isKillMoveAvaliable(whiteMove))) {
         throw new MandatoryKillMove();
       } else {
-        isOneTileMove(white, black, isKillMove(white, black));
       }
     }
   }
@@ -89,6 +88,25 @@ public class BasicLogic implements Logic {
       }
     }
     throw new RuntimeException();
+  }
+
+  // you can take just PiecePositions that changed and compare those, nothing more
+  // is needed
+  private Boolean isForwardMove(List<PiecePosition> white, List<PiecePosition> black, Integer oldBoardIndex,
+      Integer newBoardIndex, Boolean whiteMove, Boolean wasKillMove) {
+    Piece indexAffiliation;
+    if (Boolean.TRUE.equals(whiteMove)) {
+      indexAffiliation = white.get(oldBoardIndex).getAffiliation();
+      if (Piece.WHITE_PAWN.equals(indexAffiliation)) {
+        return this.white.get(oldBoardIndex).getY() - white.get(newBoardIndex).getY() < 0 || wasKillMove;
+      }
+    } else {
+      indexAffiliation = black.get(oldBoardIndex).getAffiliation();
+      if (Piece.BLACK_PAWN.equals(indexAffiliation)) {
+        return this.black.get(oldBoardIndex).getY() - black.get(newBoardIndex).getY() > 0 || wasKillMove;
+      }
+    }
+    return false;
   }
 
   private Boolean isOneMove(List<PiecePosition> white, List<PiecePosition> black, Boolean wasKillMove)
