@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.ArrayList;
 
 import com.pk.logic.exceptions.BadBoardGiven;
+import com.pk.logic.exceptions.JumpedOverAlreadyKilledPiece;
+import com.pk.logic.exceptions.JumpedOverMoreThanOnePiece;
+import com.pk.logic.exceptions.JumpedOverSameColorPiece;
 import com.pk.logic.exceptions.MandatoryKillMove;
 import com.pk.logic.exceptions.MoreThanOneMoveMade;
 import com.pk.logic.exceptions.OverlappingPieces;
@@ -58,6 +61,7 @@ public class BasicLogic implements Logic {
       if (Boolean.TRUE.equals(isKillMoveAvaliable(whiteMove))) {
         throw new MandatoryKillMove();
       } else {
+        isOneTileMove(white, black, isKillMove(white, black));
       }
     }
   }
@@ -107,6 +111,54 @@ public class BasicLogic implements Logic {
       }
     }
     return false;
+  }
+
+  private Boolean isKillMove(List<List<Piece>> board, PiecePosition oldPiece, PiecePosition newPiece, Boolean whiteMove)
+      throws JumpedOverSameColorPiece, JumpedOverMoreThanOnePiece, JumpedOverAlreadyKilledPiece {
+    Integer axisX = oldPiece.getX().compareTo(newPiece.getX());
+    Integer axisY = oldPiece.getY().compareTo(newPiece.getY());
+    Piece comparisonPiece;
+    Integer killCount = 0;
+    if (Boolean.TRUE.equals(whiteMove)) {
+      // we can take either X or Y for iteration, it doesn't matter as diagonall move
+      // always come with pair of change
+      for (int i = 0; i < oldPiece.getX() - newPiece.getX(); ++i) {
+        //
+        // when oldX is greater than newX for example 7 > 3 then we need to iterate like
+        // 7 - i to get to it
+        // but in example of different situation we would have to do 3 + i
+        // this is solved by doing 7 - (i * change)
+        // where change is old > new
+        //
+        comparisonPiece = board.get(oldPiece.getX() - (i * axisX)).get(oldPiece.getY() - (i * axisY));
+        if (comparisonPiece.equals(Piece.EMPTY)) {
+          continue;
+        } else if (comparisonPiece.equals(Piece.WHITE_KING) || comparisonPiece.equals(Piece.WHITE_PAWN)) {
+          throw new JumpedOverSameColorPiece();
+        } else if (comparisonPiece.equals(Piece.KILLED_WHITE) || comparisonPiece.equals(Piece.KILLED_BLACK)) {
+          throw new JumpedOverAlreadyKilledPiece();
+        } else {
+          killCount++;
+        }
+      }
+    } else {
+      for (int i = 0; i < oldPiece.getX() - newPiece.getX(); ++i) {
+        comparisonPiece = board.get(oldPiece.getX() - (i * axisX)).get(oldPiece.getY() - (i * axisY));
+        if (comparisonPiece.equals(Piece.EMPTY)) {
+          continue;
+        } else if (comparisonPiece.equals(Piece.BLACK_KING) || comparisonPiece.equals(Piece.BLACK_PAWN)) {
+          throw new JumpedOverSameColorPiece();
+        } else if (comparisonPiece.equals(Piece.WHITE_KING) || comparisonPiece.equals(Piece.WHITE_PAWN)) {
+          throw new JumpedOverAlreadyKilledPiece();
+        } else {
+          killCount++;
+        }
+      }
+    }
+    if (killCount > 1) {
+      throw new JumpedOverMoreThanOnePiece();
+    }
+    return killCount == 1;
   }
 
   private Boolean isOneMove(List<PiecePosition> white, List<PiecePosition> black, Boolean wasKillMove)
