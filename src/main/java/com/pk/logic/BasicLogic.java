@@ -73,7 +73,9 @@ public class BasicLogic implements Logic {
       if (Boolean.TRUE.equals(isKillMoveAvaliable(whiteMove))) {
         throw new MandatoryKillMove();
       } else {
-        checkOneTileMove(board, oldPiece, newPiece, whiteMove, isKillMove(board, oldPiece, newPiece, whiteMove));
+        Boolean isKillMove = isKillMove(board, oldPiece, newPiece, whiteMove);
+        checkOneTileMove(board, oldPiece, newPiece, whiteMove, isKillMove);
+        markKilledPiece(board, oldPiece, newPiece, isKillMove);
       }
     }
   }
@@ -142,6 +144,34 @@ public class BasicLogic implements Logic {
     return false;
   }
 
+  private void markKilledPiece(List<List<Piece>> board, PiecePosition oldPiece, PiecePosition newPiece,
+      Boolean isKillMove) {
+    Integer axisX = oldPiece.getX().compareTo(newPiece.getX());
+    Integer axisY = oldPiece.getY().compareTo(newPiece.getY());
+    Piece comparisonPiece;
+    if (Boolean.FALSE.equals(isKillMove)) {
+      return;
+    }
+    for (int i = 1; i < Math.abs(oldPiece.getX() - newPiece.getX()); ++i) {
+      comparisonPiece = board.get(oldPiece.getX() - (i * axisX)).get(oldPiece.getY() - (i * axisY));
+      switch (comparisonPiece) {
+      case BLACK_KING:
+      case BLACK_PAWN:
+        board.get(oldPiece.getX() - (i * axisX)).set(oldPiece.getY() - (i * axisY), Piece.KILLED_BLACK);
+        return;
+      case WHITE_KING:
+      case WHITE_PAWN:
+        board.get(oldPiece.getX() - (i * axisX)).set(oldPiece.getY() - (i * axisY), Piece.KILLED_WHITE);
+        return;
+      case KILLED_BLACK:
+      case KILLED_WHITE:
+        throw new RuntimeException("Why are we here I ask?");
+      case EMPTY:
+        break;
+      }
+    }
+  }
+
   private Boolean isKillMove(List<List<Piece>> board, PiecePosition oldPiece, PiecePosition newPiece, Boolean whiteMove)
       throws JumpedOverSameColorPiece, JumpedOverMoreThanOnePiece, JumpedOverAlreadyKilledPiece {
     Integer axisX = oldPiece.getX().compareTo(newPiece.getX());
@@ -151,7 +181,7 @@ public class BasicLogic implements Logic {
     if (Boolean.TRUE.equals(whiteMove)) {
       // we can take either X or Y for iteration, it doesn't matter as diagonall move
       // always come with pair of change
-      for (int i = 0; i < oldPiece.getX() - newPiece.getX(); ++i) {
+      for (int i = 1; i < Math.abs(oldPiece.getX() - newPiece.getX()); ++i) {
         //
         // when oldX is greater than newX for example 7 > 3 then we need to iterate like
         // 7 - i to get to it
@@ -171,7 +201,7 @@ public class BasicLogic implements Logic {
         }
       }
     } else {
-      for (int i = 0; i < oldPiece.getX() - newPiece.getX(); ++i) {
+      for (int i = 1; i < Math.abs(oldPiece.getX() - newPiece.getX()); ++i) {
         comparisonPiece = board.get(oldPiece.getX() - (i * axisX)).get(oldPiece.getY() - (i * axisY));
         if (comparisonPiece.equals(Piece.EMPTY)) {
           continue;
