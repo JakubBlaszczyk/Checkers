@@ -10,6 +10,7 @@ import com.pk.logic.exceptions.JumpedOverMoreThanOnePiece;
 import com.pk.logic.exceptions.JumpedOverSameColorPiece;
 import com.pk.logic.exceptions.MandatoryKillMove;
 import com.pk.logic.exceptions.MoreThanOneMoveMade;
+import com.pk.logic.exceptions.MoreThanOneTileMove;
 import com.pk.logic.exceptions.OverlappingPieces;
 import com.pk.logic.exceptions.VerticalOrHorizontalMove;
 
@@ -29,7 +30,8 @@ public class BasicLogic implements Logic {
   }
 
   public Boolean update(List<List<Piece>> board)
-      throws MandatoryKillMove, VerticalOrHorizontalMove, MoreThanOneMoveMade, OverlappingPieces {
+      throws MoreThanOneMoveMade, VerticalOrHorizontalMove, MandatoryKillMove, OverlappingPieces,
+      JumpedOverSameColorPiece, JumpedOverMoreThanOnePiece, JumpedOverAlreadyKilledPiece, MoreThanOneTileMove {
     List<PiecePosition> white = findAllWhite(board);
     List<PiecePosition> black = findAllBlack(board);
 
@@ -41,7 +43,8 @@ public class BasicLogic implements Logic {
   }
 
   private void findOneProperMove(List<List<Piece>> board)
-      throws MoreThanOneMoveMade, VerticalOrHorizontalMove, MandatoryKillMove, OverlappingPieces {
+      throws MoreThanOneMoveMade, VerticalOrHorizontalMove, MandatoryKillMove, OverlappingPieces,
+      JumpedOverSameColorPiece, JumpedOverMoreThanOnePiece, JumpedOverAlreadyKilledPiece, MoreThanOneTileMove {
     List<PiecePosition> white = findAllWhite(board);
     List<PiecePosition> black = findAllBlack(board);
     Boolean wasKillMove;
@@ -54,6 +57,15 @@ public class BasicLogic implements Logic {
     Integer moveIndex = getMoveIndex(white, black, whiteMove);
     Integer newBoardIndex = moveIndex / this.board.size();
     Integer oldBoardIndex = moveIndex % this.board.size();
+    PiecePosition oldPiece;
+    PiecePosition newPiece;
+    if (whiteMove) {
+      oldPiece = this.white.get(oldBoardIndex);
+      newPiece = this.white.get(newBoardIndex);
+    } else {
+      oldPiece = this.black.get(oldBoardIndex);
+      newPiece = this.black.get(newBoardIndex);
+    }
     isForwardMove(white, black, newBoardIndex, oldBoardIndex, whiteMove, killMove);
     // if it wasn't kill move there is need to check MandatoryKillMove as this
     // condition haven't been accomplished
@@ -61,7 +73,7 @@ public class BasicLogic implements Logic {
       if (Boolean.TRUE.equals(isKillMoveAvaliable(whiteMove))) {
         throw new MandatoryKillMove();
       } else {
-        isOneTileMove(white, black, isKillMove(white, black));
+        checkOneTileMove(board, oldPiece, newPiece, whiteMove, isKillMove(board, oldPiece, newPiece, whiteMove));
       }
     }
   }
@@ -159,6 +171,26 @@ public class BasicLogic implements Logic {
       throw new JumpedOverMoreThanOnePiece();
     }
     return killCount == 1;
+  }
+
+  private void checkOneTileMove(List<List<Piece>> board, PiecePosition oldPiece, PiecePosition newPiece,
+      Boolean whiteMove, Boolean killMove) throws MoreThanOneTileMove {
+    Integer difference;
+    //
+    // for kings we can ignore this check, as they can move more than one tile
+    // regardless
+    //
+    if (oldPiece.getAffiliation().equals(Piece.BLACK_KING) || oldPiece.getAffiliation().equals(Piece.WHITE_KING)) {
+      return;
+    }
+
+    //
+    // assuming that move isn't diagonall we can just check difference
+    //
+    difference = Math.abs(oldPiece.getX() - newPiece.getX());
+    if ((killMove && difference > 2) || difference > 1) {
+      throw new MoreThanOneTileMove();
+    }
   }
 
   private Boolean isOneMove(List<PiecePosition> white, List<PiecePosition> black, Boolean wasKillMove)
