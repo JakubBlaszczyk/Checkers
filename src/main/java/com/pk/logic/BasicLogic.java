@@ -102,6 +102,23 @@ public class BasicLogic implements Logic {
           return this.board.size() * index + i;
         }
       }
+    } else {
+      for (int i = 0; i < this.black.size(); ++i) {
+        for (int j = 0; j < black.size(); ++j) {
+          if (this.black.get(i).getX().equals(black.get(j).getX())
+              && this.black.get(i).getY().equals(black.get(j).getY())) {
+            found = true;
+            index = j;
+            break;
+          }
+        }
+        if (Boolean.TRUE.equals(found)) {
+          found = false;
+          index = -1;
+        } else {
+          return this.board.size() * index + i;
+        }
+      }
     }
     throw new RuntimeException();
   }
