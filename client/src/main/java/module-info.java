@@ -1,13 +1,13 @@
 /** */
 module com.pk {
-  // requires transitive javafx.controls;
-  // requires javafx.fxml;
+  requires transitive javafx.controls;
+  requires javafx.fxml;
   requires static lombok;
   requires org.slf4j;
 
   opens com.pk.lanserver;
   opens com.pk;
-  // opens com.pk.frontend.menu;
+  opens com.pk.frontend.menu;
 
   exports com.pk;
   exports com.pk.logic;
@@ -15,5 +15,5 @@ module com.pk {
   exports com.pk.lanserver;
   exports com.pk.lanserver.exceptions;
   exports com.pk.lanserver.models;
-  // exports com.pk.frontend.menu;
+  exports com.pk.frontend.menu;
 }
