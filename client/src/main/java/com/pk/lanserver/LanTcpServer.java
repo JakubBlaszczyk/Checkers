@@ -16,8 +16,10 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -112,48 +114,43 @@ public class LanTcpServer implements LocalTcpServer {
           }
           String msg = new String(bb.array(), 0, len).strip();
           log.info("Got msg <{}>", msg);
-          if (msg.charAt(msg.length() - 1) == '!') {
-            msg = msg.substring(0, msg.length() - 1);
-            log.info("Got msg stripped <{}>", msg);
-          }
-          if (msg.startsWith("checkers:msg ")) {
-            log.info("Got CHAT type");
-            bQueueMsgs.add(msg.substring(13));
-          } else if (msg.startsWith("checkers:move ")) {
-            log.info("Got MOVE type");
-            bQueueMoves.add(Move.fromString(msg.substring(14)));
-          } else if (msg.startsWith("checkers:invitationAsk ")) {
-            if (addNewInvite(key, msg, sc, bQueueInvites)) {
-              // TODO ?
-              ;
-            }
-          } else if (msg.startsWith("checkers:inviteRejected")) {
-            futureInvite.complete(false);
-          } else if (msg.startsWith("checkers:inviteOk")) {
-            futureInvite.complete(true);
-            remoteChannel = sc;
-          } else {
-            log.warn("Got unknown message: " + msg);
+          for (String packet : parseMessages(msg)) {
+            innerCall(packet, key, sc);
           }
         } else if (key.isConnectable()) {
-          log.info("Connectable, ???");
-          // SocketChannel sc = (SocketChannel) key.channel();
-          // if (sc.isConnectionPending()) {
-          //   try {
-          //     Boolean ret = sc.finishConnect();
-          //     log.info("Finish connect: ", ret);
-
-          //   } catch (IOException e) {
-          //     log.error("finisConnect wyjeba: ", e);
-          //   }
-          //   log.info("Connection was pending but now is finished connecting.");
-          //   key.cancel();
-          //   sc.register(selector, SelectionKey.OP_READ);
-          //   log.info("New key registered");
-          // }
+          log.error("Connectable, ???");
         }
       }
     }
+  }
+
+  private void innerCall(String msg, SelectionKey key, SocketChannel sc) throws IOException {
+    if (msg.startsWith("checkers:msg ")) {
+      log.info("Got CHAT type");
+      bQueueMsgs.add(msg.substring(13));
+    } else if (msg.startsWith("checkers:move ")) {
+      log.info("Got MOVE type");
+      bQueueMoves.add(Move.fromString(msg.substring(14)));
+    } else if (msg.startsWith("checkers:invitationAsk ")) {
+      if (addNewInvite(key, msg, sc, bQueueInvites)) {
+        // TODO ?
+        ;
+      }
+    } else if (msg.startsWith("checkers:inviteRejected")) {
+      futureInvite.complete(false);
+    } else if (msg.startsWith("checkers:inviteOk")) {
+      futureInvite.complete(true);
+      remoteChannel = sc;
+    } else {
+      log.warn("Got unknown message: " + msg);
+    }
+  }
+
+  private List<String> parseMessages(String msg) {
+    if (msg.charAt(msg.length() - 1) == '!') {
+      msg = msg.substring(0, msg.length() - 1);
+    }
+    return Arrays.asList(msg.split("!"));
   }
 
   private InetAddress inviteCodeToIp(String inv) throws UnknownHostException {
@@ -318,8 +315,8 @@ public class LanTcpServer implements LocalTcpServer {
       log.error("Move remotePlayer is null :(");
       return;
     }
-    byte[] encodedMsg = Base64.getEncoder().encode(msg.getBytes());
-    remoteChannel.write(ByteBuffer.wrap(("checkers:msg " + new String(encodedMsg)).getBytes()));
+    byte[] encodedMsg = Base64.getEncoder().encode((msg).getBytes());
+    remoteChannel.write(ByteBuffer.wrap(("checkers:msg " + new String(encodedMsg) + "!").getBytes()));
   }
 
   @Override
