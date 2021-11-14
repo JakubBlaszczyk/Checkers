@@ -16,19 +16,18 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.11</version>
+      <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-collections4</artifactId>
-      <!-- <version>${commons-collections4.version}</version> -->
-      <version>4.4</version>
+      <version>${commons-collections4.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
-      <version>1.15</version>
+      <version>${commons-codec.version}</version>
     </dependency>  
     <dependency>
       <groupId>org.projectlombok</groupId>
@@ -44,8 +43,7 @@
   </dependencies>
 
   <build>
-    <finalName>checkers-client</finalName>
-    <!-- <pluginManagement> -->
+    <finalName>checkers-server</finalName>
     <plugins>
       <plugin>
         <groupId>pl.project13.maven</groupId>
@@ -143,19 +141,6 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>${maven-jar-plugin.version}</version>
-        <configuration>
-          <archive>
-            <manifest>
-              <addClasspath>true</addClasspath>
-              <mainClass>com.pk.SuperMain</mainClass>
-            </manifest>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>com.github.auties00</groupId>
         <artifactId>delombok-plugin</artifactId>
         <version>${delombok-plugin.version}</version>
@@ -174,6 +159,5 @@
         </configuration>
       </plugin>
     </plugins>
-    <!-- </pluginManagement> -->
   </build>
 </project>
