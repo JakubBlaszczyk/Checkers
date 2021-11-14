@@ -37,9 +37,9 @@ public class BasicUdpServer implements UdpServer {
   private Vector<Player> qActivePlayers = null;
   private Set<String> setLocalIps;
 
-  private final Integer timeout = 4;
+  private static final Integer TIMEOUT = 4;
 
-  BasicUdpServer(String nick, String profileImg, Integer port) throws SocketException {
+  public BasicUdpServer(String nick, String profileImg, Integer port) throws SocketException {
     setNick(nick);
     setProfileImg(profileImg);
     this.port = port;
@@ -95,7 +95,7 @@ public class BasicUdpServer implements UdpServer {
           log.info("Got msg: <{}>", msg);
           if (start != null && futureActivePlayers != null) {
             // Magic number
-            if (Duration.between(start, Instant.now()).toSeconds() > timeout) {
+            if (Duration.between(start, Instant.now()).toSeconds() > TIMEOUT) {
               futureActivePlayers.complete(qActivePlayers);
               futureActivePlayers = null;
               start = null;
@@ -126,7 +126,7 @@ public class BasicUdpServer implements UdpServer {
         } catch (SocketTimeoutException ignore) {
           // Magic number
           if (start != null && futureActivePlayers != null) {
-            if (Duration.between(start, Instant.now()).toSeconds() > timeout) {
+            if (Duration.between(start, Instant.now()).toSeconds() > TIMEOUT) {
               futureActivePlayers.complete(qActivePlayers);
               futureActivePlayers = null;
               start = null;
@@ -172,7 +172,7 @@ public class BasicUdpServer implements UdpServer {
     return new DatagramPacket(buf, buf.length, addr, 10000);
   }
 
-  private DatagramSocket createSocket(Integer port) throws SocketException {
+  protected DatagramSocket createSocket(Integer port) throws SocketException {
     return new DatagramSocket(port);
   }
 
