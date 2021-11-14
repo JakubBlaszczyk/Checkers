@@ -2,12 +2,14 @@ package com.pk.lanserver;
 
 import com.pk.lanserver.exceptions.InvitationRejected;
 import com.pk.lanserver.exceptions.MoveRejected;
+import com.pk.lanserver.models.Connection;
 import com.pk.lanserver.models.Invite;
 import com.pk.lanserver.models.Move;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -27,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class LanTcpServer implements LocalTcpServer {
-  private Socket remotePlayer;
+  private SocketChannel remoteChannel;
   private BlockingQueue<String> bQueueMsgs;
   private BlockingQueue<Move> bQueueMoves;
   private @Getter @Setter @NonNull BlockingQueue<Invite> bQueueInvites;
@@ -35,9 +37,11 @@ public class LanTcpServer implements LocalTcpServer {
   private ServerSocketChannel serverSocketChannel;
   private @Setter @NonNull String nick;
   private @Setter @NonNull String profileImg;
-  // invCode -> Socket
-  private Map<String, Socket> mapInvToSock;
+  private CompletableFuture<Boolean> futureInvite = null;
+  // invCode -> Connection
+  private Map<String, Connection> mapInvToConn;
   private String localIp;
+  private Integer port;
 
   /**
    * Creates instance of BasicTcpServer, configures selector and binds to the port.
@@ -51,12 +55,11 @@ public class LanTcpServer implements LocalTcpServer {
       BlockingQueue<Invite> bQueueInvites,
       BlockingQueue<String> bQueueMsgs,
       BlockingQueue<Move> bQueueMoves,
-      String ip,
       String localIp,
       Integer port,
       String nick,
       String profileImg,
-      Map<String, Socket> mapInvToSock)
+      Map<String, Connection> mapInvToConn)
       throws IOException {
     this.bQueueInvites = bQueueInvites;
     this.bQueueMsgs = bQueueMsgs;
@@ -69,6 +72,8 @@ public class LanTcpServer implements LocalTcpServer {
     this.profileImg = profileImg;
     this.nick = nick;
     this.localIp = localIp;
+    this.port = port;
+    this.mapInvToConn = mapInvToConn;
   }
 
   public void cleanup() throws IOException {
@@ -82,6 +87,7 @@ public class LanTcpServer implements LocalTcpServer {
     SelectionKey key = null;
     while (true) {
       if (Thread.currentThread().isInterrupted()) {
+        log.error("Tcp thread interrupted");
         return 0;
       }
       if (selector.select() <= 0) continue;
@@ -105,16 +111,46 @@ public class LanTcpServer implements LocalTcpServer {
             continue;
           }
           String msg = new String(bb.array(), 0, len).strip();
+          log.info("Got msg <{}>", msg);
+          if (msg.charAt(msg.length() - 1) == '!') {
+            msg = msg.substring(0, msg.length() - 1);
+            log.info("Got msg stripped <{}>", msg);
+          }
           if (msg.startsWith("checkers:msg ")) {
             log.info("Got CHAT type");
             bQueueMsgs.add(msg.substring(13));
           } else if (msg.startsWith("checkers:move ")) {
             log.info("Got MOVE type");
             bQueueMoves.add(Move.fromString(msg.substring(14)));
+          } else if (msg.startsWith("checkers:invitationAsk ")) {
+            if (addNewInvite(key, msg, sc, bQueueInvites)) {
+              // TODO ?
+              ;
+            }
+          } else if (msg.startsWith("checkers:inviteRejected")) {
+            futureInvite.complete(false);
+          } else if (msg.startsWith("checkers:inviteOk")) {
+            futureInvite.complete(true);
+            remoteChannel = sc;
           } else {
             log.warn("Got unknown message: " + msg);
           }
-          readInvite(key, bQueueInvites);
+        } else if (key.isConnectable()) {
+          log.info("Connectable, ???");
+          // SocketChannel sc = (SocketChannel) key.channel();
+          // if (sc.isConnectionPending()) {
+          //   try {
+          //     Boolean ret = sc.finishConnect();
+          //     log.info("Finish connect: ", ret);
+
+          //   } catch (IOException e) {
+          //     log.error("finisConnect wyjeba: ", e);
+          //   }
+          //   log.info("Connection was pending but now is finished connecting.");
+          //   key.cancel();
+          //   sc.register(selector, SelectionKey.OP_READ);
+          //   log.info("New key registered");
+          // }
         }
       }
     }
@@ -132,30 +168,50 @@ public class LanTcpServer implements LocalTcpServer {
   }
 
   public Future<Boolean> invite(String inviteCode) throws InvitationRejected, IOException {
-    Socket sock = openSocketToPlayer(inviteCodeToIp(inviteCode));
+    futureInvite = new CompletableFuture<>();
+    SocketAddress sockaddr = new InetSocketAddress(inviteCodeToIp(inviteCode), port);
+    SocketChannel scNew = SocketChannel.open();
+    scNew.configureBlocking(true);
+    log.info("Connect ret: {}", scNew.connect(sockaddr));
+    scNew.write(ByteBuffer.wrap(String.format("checkers:invitationAsk %s %s %s", nick, profileImg, inviteCode).getBytes()));
+    scNew.configureBlocking(false);
+    selector.wakeup();
+    scNew.register(selector, SelectionKey.OP_READ);
+    log.info("scNew connected?");
+    return futureInvite;
+    // Socket sock = openSocketToPlayer(inviteCodeToIp(inviteCode));
 
-    if (!sock.isConnected()) {
-      log.error("Socket is already closed");
-      throw new IOException("Socket is already closed");
-    }
-    sock.getOutputStream()
-        .write(Utils.wrapMsg("checkers:invitationAsk " + nick + " " + profileImg));
-    byte[] buf = new byte[100];
-    int len = sock.getInputStream().read(buf);
-    log.debug("Send len: " + len);
-    String msg = new String(buf, 0, len);
-    if (msg.equals("checkers:invitationOk")) {
-      log.info("Invitation accepted");
-      remotePlayer = mapInvToSock.get(inviteCode);
-      return CompletableFuture.completedFuture(true);
-    } else if (msg.equals("checkers:invitationRejected")) {
-      return CompletableFuture.completedFuture(false);
-      // throw new InvitationRejected("Invitation rejected");
-    } else {
-      // TODO correct?
-      return CompletableFuture.completedFuture(false);
-      // throw new InvitationRejected("Invalid response: " + msg);
-    }
+    // if (!sock.isConnected()) {
+    //   log.error("Socket is already closed");
+    //   throw new IOException("Socket is already closed");
+    // }
+    // sock.getOutputStream()
+    //     .write(Utils.wrapMsg("invitationAsk " + nick + " " + profileImg + " " + inviteCode));
+    // byte[] buf = new byte[100];
+    // int len = sock.getInputStream().read(buf);
+    // log.debug("Recv len: " + len);
+    // String msg = new String(buf, 0, len);
+    // log.info("Invite msg: <{}>", msg);
+    // if (msg.charAt(msg.length() - 1) == '!') {
+    //   msg = msg.substring(0, msg.length() - 1);
+    // }
+    // if (msg.equals("checkers:invitationOk")) {
+    //   log.info("Invitation accepted");
+    //   // remotePlayer = sock;
+    //   sock.getChannel();
+
+    //   // remoteChannel = sc;
+    //   return CompletableFuture.completedFuture(true);
+    // } else if (msg.equals("checkers:invitationRejected")) {
+    //   log.info("Invite rejected");
+    //   return CompletableFuture.completedFuture(false);
+    //   // throw new InvitationRejected("Invitation rejected");
+    // } else {
+    //   // TODO correct?
+    //   log.info("Got invalid invite reponse");
+    //   return CompletableFuture.completedFuture(false);
+    //   // throw new InvitationRejected("Invalid response: " + msg);
+    // }
   }
 
   /**
@@ -167,41 +223,19 @@ public class LanTcpServer implements LocalTcpServer {
    */
   protected Socket openSocketToPlayer(InetAddress addr) throws IOException {
     log.info("TCP connecting to {}", addr.getHostAddress());
-    return new Socket(addr, 10000);
+    return new Socket(addr, port);
   }
 
   public boolean acceptInvitation(String inviteCode) throws IOException {
-    remotePlayer = mapInvToSock.get(inviteCode);
-    if (!remotePlayer.isConnected()) {
+    Connection conn = mapInvToConn.get(inviteCode);
+    SocketChannel sc = conn.getSc();
+    remoteChannel = sc;
+    if (!remoteChannel.isConnected()) {
       log.error("Socket is already closed");
       throw new IOException("Socket is already closed");
     }
-    remotePlayer.getOutputStream().write(Utils.wrapMsg("invitationOk"));
+    remoteChannel.write(ByteBuffer.wrap(Utils.wrapMsg("inviteOk")));
     return true;
-  }
-
-  /**
-   * Method used by main TCP loop to read received message and verify whether it is invitation or
-   * not.
-   *
-   * @param key placeholder
-   * @param bQueue queue where new invites are stored.
-   * @throws IOException placeholder
-   */
-  protected void readInvite(SelectionKey key, BlockingQueue<Invite> bQueue) throws IOException {
-    SocketChannel sc = (SocketChannel) key.channel();
-    ByteBuffer bb = ByteBuffer.allocate(1024);
-    int len = sc.read(bb);
-    if (len <= 0) {
-      sc.close();
-      log.info("Connection closed");
-      return;
-    }
-    String result = new String(bb.array(), 0, len);
-    log.info("Message received: " + result + " Message length: " + result.length());
-    if (addNewInvite(key, result, sc, bQueue)) {
-      key.cancel();
-    }
   }
 
   /**
@@ -235,11 +269,13 @@ public class LanTcpServer implements LocalTcpServer {
       for (String item : items) {
         log.info(item);
       }
-      log.info("pre");
-      key.cancel();
-      sc.configureBlocking(true);
-      log.info("post");
-      Invite invite = new Invite(items[0], items[1], sc.socket(), items[2]);
+      // log.info("pre");
+      // key.cancel();
+      // sc.configureBlocking(true);
+      // log.info("post");
+      // Invite invite = new Invite(items[0], items[1], sc.socket(), items[2]);
+      Invite invite = new Invite(items[0], items[1], null, items[2]);
+      mapInvToConn.put(items[2], new Connection(key, sc));
       log.info("Adding: " + invite.toString());
       bQueue.add(invite);
       return true;
@@ -269,13 +305,21 @@ public class LanTcpServer implements LocalTcpServer {
 
   @Override
   public void move(Move move) throws IOException, MoveRejected {
-    remotePlayer.getOutputStream().write((Utils.wrapMsg("move " + move.toSendableFormat())));
+    if (remoteChannel == null) {
+      log.error("Move remotePlayer is null :(");
+      return;
+    }
+    remoteChannel.write(ByteBuffer.wrap(Utils.wrapMsg("move " + move.toSendableFormat())));
   }
 
   @Override
   public void chatSendMsg(String msg) throws IOException {
+    if (remoteChannel == null) {
+      log.error("Move remotePlayer is null :(");
+      return;
+    }
     byte[] encodedMsg = Base64.getEncoder().encode(msg.getBytes());
-    remotePlayer.getOutputStream().write(("checkers:msg " + new String(encodedMsg)).getBytes());
+    remoteChannel.write(ByteBuffer.wrap(("checkers:msg " + new String(encodedMsg)).getBytes()));
   }
 
   @Override
@@ -290,6 +334,7 @@ public class LanTcpServer implements LocalTcpServer {
 
   @Override
   public Socket getSocket() {
-    return remotePlayer;
+    // FIXME still needed?
+    return null;
   }
 }

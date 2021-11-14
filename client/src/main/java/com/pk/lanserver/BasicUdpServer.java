@@ -1,11 +1,10 @@
 package com.pk.lanserver;
 
-import com.pk.lanserver.models.Packet;
-import com.pk.lanserver.models.Player;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -13,10 +12,18 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+
+import com.pk.lanserver.models.Packet;
+import com.pk.lanserver.models.Player;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -28,12 +35,28 @@ public class BasicUdpServer implements UdpServer {
   private CompletableFuture<List<Player>> futureActivePlayers = null;
   private Instant start = null;
   private Vector<Player> qActivePlayers = null;
+  private Set<String> setLocalIps;
+
+  private final Integer timeout = 4;
 
   BasicUdpServer(String nick, String profileImg, Integer port) throws SocketException {
     setNick(nick);
     setProfileImg(profileImg);
     this.port = port;
     ds = createSocket(port);
+    ds.setBroadcast(true);
+    setLocalIps = new HashSet<>();
+
+    Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
+    for (NetworkInterface netint : Collections.list(nets)) {
+      log.info("Display name: {}", netint.getDisplayName());
+      log.info("Name: {}", netint.getName());
+      Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
+      for (InetAddress inetAddress : Collections.list(inetAddresses)) {
+        log.info("InetAddress: {}", inetAddress);
+        setLocalIps.add(inetAddress.getHostAddress());
+      }
+    }
   }
 
   public void setNick(String nick) {
@@ -58,48 +81,62 @@ public class BasicUdpServer implements UdpServer {
   /** */
   @Override
   public Integer call() throws Exception {
-    ds.setSoTimeout(500);
-    for (; ; ) {
-      try {
-        DatagramPacket dp = recvMsg(ds);
-        String msg = new String(dp.getData(), 0, dp.getLength()).strip();
-        InetAddress addr = dp.getAddress();
-        // Magic number
-        if (Duration.between(start, Instant.now()).toSeconds() > 5) {
-          futureActivePlayers.complete(qActivePlayers);
-          futureActivePlayers = null;
-          start = null;
-        }
-        if (msg.equals("checkers:probe")) {
-          DatagramPacket dp2 = prepareResponse(msg, addr);
-          if (dp2 == null) {
-            log.info("dp is null");
+    try {
+      ds.setSoTimeout(500);
+      for (; ; ) {
+        try {
+          DatagramPacket dp = recvMsg(ds);
+          InetAddress addr = dp.getAddress();
+          if (setLocalIps.contains(addr.getHostAddress())) {
+            log.info("Its our message, ignoring");
             continue;
           }
-          log.info("DP: {}", new String(dp2.getData()));
-          ds.send(dp2);
-        } else if (msg.startsWith("checkers:probeResp ")) {
+          String msg = new String(dp.getData(), 0, dp.getLength()).strip();
+          log.info("Got msg: <{}>", msg);
           if (start != null && futureActivePlayers != null) {
-            if (qActivePlayers.size() > 200) {
-              qActivePlayers.clear();
-            }
-            Packet packet = new Packet(dp.getAddress(), dp.getPort(), new String(dp.getData()));
-            Player player = getActivePlayers(packet);
-            if (player != null) {
-              qActivePlayers.add(player);
+            // Magic number
+            if (Duration.between(start, Instant.now()).toSeconds() > timeout) {
+              futureActivePlayers.complete(qActivePlayers);
+              futureActivePlayers = null;
+              start = null;
             }
           }
-        } else {
-          log.info("Got unknown message: <{}>", msg);
-        }
-      } catch (SocketTimeoutException ignore) {
-        // Magic number
-        if (Duration.between(start, Instant.now()).toSeconds() > 5) {
-          futureActivePlayers.complete(qActivePlayers);
-          futureActivePlayers = null;
-          start = null;
+          if (msg.equals("checkers:probe")) {
+            DatagramPacket dp2 = prepareResponse(msg, addr);
+            if (dp2 == null) {
+              log.info("dp is null");
+              continue;
+            }
+            log.info("DP: {}", new String(dp2.getData()));
+            ds.send(dp2);
+          } else if (msg.startsWith("checkers:probeResp ")) {
+            if (start != null && futureActivePlayers != null) {
+              if (qActivePlayers.size() > 200) {
+                qActivePlayers.clear();
+              }
+              Packet packet = new Packet(dp.getAddress(), dp.getPort(), new String(dp.getData()));
+              Player player = getActivePlayers(packet);
+              if (player != null) {
+                qActivePlayers.add(player);
+              }
+            }
+          } else {
+            log.info("Got unknown message: <{}>", msg);
+          }
+        } catch (SocketTimeoutException ignore) {
+          // Magic number
+          if (start != null && futureActivePlayers != null) {
+            if (Duration.between(start, Instant.now()).toSeconds() > timeout) {
+              futureActivePlayers.complete(qActivePlayers);
+              futureActivePlayers = null;
+              start = null;
+            }
+          }
         }
       }
+    } catch (Exception e) {
+      log.error("UDP server sie wyjebal, ", e);
+      return -1;
     }
   }
 
