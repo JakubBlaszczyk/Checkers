@@ -33,9 +33,9 @@ public class LanServerController implements ServerController {
    * @throws IOException if underling channel is closed.
    */
   public LanServerController(
-      BlockingQueue<Invite> bQI,
-      BlockingQueue<String> bQS,
-      BlockingQueue<Move> bQM,
+      BlockingQueue<Invite> invites,
+      BlockingQueue<String> messages,
+      BlockingQueue<Move> moves,
       String localIp,
       Integer localPort,
       Integer remotePort,
@@ -44,7 +44,7 @@ public class LanServerController implements ServerController {
       Map<String, Socket> mapInvToSock)
       throws IOException {
     udpServer = new BasicUdpServer(nick, profileImg, localPort, remotePort);
-    tcpServer = new LanTcpServer(bQI, bQS, bQM, localIp, localPort, remotePort, "dDI=", "dDI=", new HashMap<>());
+    tcpServer = new LanTcpServer(invites, messages, moves, localIp, localPort, remotePort, "dDI=", "dDI=", new HashMap<>());
     futureUdp = executorService.submit(udpServer);
     futureTcp = executorService.submit(tcpServer);
   }

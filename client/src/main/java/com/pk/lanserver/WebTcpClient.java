@@ -24,11 +24,11 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class WebTcpClient implements Callable<Integer> {
+public class WebTcpClient implements Callable<Integer>, ServerController {
   private @NonNull Socket remotePlayer;
-  private @NonNull BlockingQueue<String> bQueueMsgs;
-  private @NonNull BlockingQueue<Move> bQueueMoves;
-  private @NonNull BlockingQueue<Invite> bQueueInvites;
+  private @NonNull BlockingQueue<Invite> invites;
+  private @NonNull BlockingQueue<String> messages;
+  private @NonNull BlockingQueue<Move> moves;
   private @Setter @NonNull String nick;
   private @Setter @NonNull String profileImg;
   private CompletableFuture<String> futureInviteCode;
@@ -36,17 +36,17 @@ public class WebTcpClient implements Callable<Integer> {
   private CompletableFuture<Boolean> futureInviteAccepted;
 
   public WebTcpClient(
-      BlockingQueue<Invite> bQueueInvites,
-      BlockingQueue<String> bQueueMsgs,
-      BlockingQueue<Move> bQueueMoves,
+      BlockingQueue<Invite> invites,
+      BlockingQueue<String> messages,
+      BlockingQueue<Move> moves,
       String addr,
       Integer port,
       String nick,
       String profileImg)
       throws IOException {
-    this.bQueueInvites = bQueueInvites;
-    this.bQueueMsgs = bQueueMsgs;
-    this.bQueueMoves = bQueueMoves;
+    this.invites = invites;
+    this.messages = messages;
+    this.moves = moves;
     this.nick = nick;
     this.profileImg = profileImg;
     remotePlayer = new Socket(InetAddress.getByName(addr), port);
@@ -96,12 +96,12 @@ public class WebTcpClient implements Callable<Integer> {
       futureInviteCode.complete(msg.substring(16));
     } else if (msg.startsWith("checkers:chat ")) {
       log.info("Got CHAT type");
-      bQueueMsgs.add(msg.substring(14));
+      messages.add(msg.substring(14));
     } else if (msg.startsWith("checkers:move ")) {
       log.info("Got MOVE type");
-      bQueueMoves.add(Move.fromString(msg.substring(14)));
+      moves.add(Move.fromString(msg.substring(14)));
     } else if (msg.startsWith("checkers:inviteAsk ")) {
-      if (!addNewInvite(msg.substring(19), bQueueInvites)) {
+      if (!addNewInvite(msg.substring(19), invites)) {
         log.warn("Got invalid invitation, ignoring");
       }
     } else if (msg.startsWith("checkers:inviteOk ")) {
@@ -124,7 +124,6 @@ public class WebTcpClient implements Callable<Integer> {
     List<Player> parsed = new ArrayList<>();
 
     for (int i = 0; i < items.length; i += 2) {
-      // TODO check it
       parsed.add(new Player(null, items[i], items[i + 1], null));
     }
     futurePlayersList.complete(parsed);
@@ -160,18 +159,21 @@ public class WebTcpClient implements Callable<Integer> {
     }
   }
 
+  @Override
   public Future<Boolean> invite(String inviteCode) throws InvitationRejected, IOException {
     futureInviteAccepted = new CompletableFuture<>();
     remotePlayer.getOutputStream().write(Utils.wrapMsg("inviteAsk " + inviteCode));
     return futureInviteAccepted;
   }
 
+  @Override
   public Future<List<Player>> getActivePlayers() throws IOException {
     futurePlayersList = new CompletableFuture<>();
     remotePlayer.getOutputStream().write(Utils.wrapMsg("getPlayers"));
     return futurePlayersList;
   }
 
+  @Override
   public boolean acceptInvitation(String inviteCode) throws IOException {
     remotePlayer.getOutputStream().write(Utils.wrapMsg("inviteOk " + inviteCode));
     return true;
@@ -181,26 +183,17 @@ public class WebTcpClient implements Callable<Integer> {
     remotePlayer.close();
   }
 
+  @Override
   public void move(Move move) throws IOException, MoveRejected {
     remotePlayer.getOutputStream().write(Utils.wrapMsg("move " + move.toSendableFormat()));
   }
 
+  @Override
   public void chatSendMsg(String msg) throws IOException {
     remotePlayer.getOutputStream().write(Utils.wrapMsg("chat " + msg));
   }
 
-  public BlockingQueue<String> getBQueueMsgs() {
-    return bQueueMsgs;
-  }
-
-  public BlockingQueue<Move> getBQueueMoves() {
-    return bQueueMoves;
-  }
-
-  public Socket getSocket() {
-    return remotePlayer;
-  }
-
+  @Override
   public Future<String> getInviteCode() {
     return futureInviteCode;
   }

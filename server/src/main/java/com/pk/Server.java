@@ -22,7 +22,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.BidiMap;
-import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 
 @Slf4j
 public class Server implements Callable<Integer> {
@@ -30,14 +29,14 @@ public class Server implements Callable<Integer> {
   private ServerSocketChannel serverSocketChannel;
   // Nickname <-> SocketChannel
   private BidiMap<String, SocketChannel> connectedPlayersMap;
-  // key <-> SocketChannel
-  private BidiMap<SelectionKey, SocketChannel> tmpMap;
   // invite code <-> SocketChannel
   private BidiMap<String, SocketChannel> inviteCodeMap;
   // All active players
   private Set<Player> hashPlayers;
   // Players in game
-  private Set<SocketChannel> allPlayersInGames;
+  private Set<SocketChannel> playersInGames;
+
+  private static final Integer INVITE_CODE_LENGTH = 12;
 
   public Server(
       String ip,
@@ -45,7 +44,7 @@ public class Server implements Callable<Integer> {
       BidiMap<String, SocketChannel> connectedPlayersMap,
       BidiMap<String, SocketChannel> inviteCodeMap,
       Set<Player> hashPlayers,
-      Set<SocketChannel> allPlayersInGames)
+      Set<SocketChannel> playersInGames)
       throws IOException {
     selector = Selector.open();
     serverSocketChannel = ServerSocketChannel.open();
@@ -55,8 +54,7 @@ public class Server implements Callable<Integer> {
     this.connectedPlayersMap = connectedPlayersMap;
     this.inviteCodeMap = inviteCodeMap;
     this.hashPlayers = hashPlayers;
-    this.allPlayersInGames = allPlayersInGames;
-    tmpMap = new DualHashBidiMap<>();
+    this.playersInGames = playersInGames;
   }
 
   public void cleanup() throws IOException {
@@ -72,27 +70,20 @@ public class Server implements Callable<Integer> {
         return 0;
       }
       if (selector.select() <= 0) continue;
-      Set<SelectionKey> set = selector.selectedKeys();
-      Iterator<SelectionKey> iterator = set.iterator();
+      Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
       while (iterator.hasNext()) {
         key = iterator.next();
         iterator.remove();
-        if (key.isAcceptable()) {
-          try {
+        try {
+          if (key.isAcceptable()) {
             handleAccept();
-          } catch (IOException e) {
-            log.error("Accept error, terminating");
-            key.cancel();
-            continue;
           }
-        }
-        if (key.isReadable()) {
-          try {
+          if (key.isReadable()) {
             handleReadMsg(key);
-          } catch (IOException e) {
-            log.error("Connection error, terminating");
-            key.cancel();
           }
+        } catch (IOException e) {
+          log.error("Accept error, terminating");
+          key.cancel();
         }
       }
     }
@@ -127,44 +118,25 @@ public class Server implements Callable<Integer> {
       handleSessionMsg(msg, key);
       return;
     }
-    if (msg.startsWith("checkers:config ")) {
-      try {
+    try {
+      if (msg.startsWith("checkers:config ")) {
         handleConfig(sc, msg);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    } else if (msg.equals("checkers:randomGame")) {
-      try {
+      } else if (msg.equals("checkers:randomGame")) {
         handleRandomGame(key, sc);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    } else if (msg.equals("checkers:getPlayers")) {
-      try {
+      } else if (msg.equals("checkers:getPlayers")) {
         sc.write(ByteBuffer.wrap(transformPlayersListIntoBytes()));
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    } else if (msg.startsWith("checkers:inviteAsk ")) {
-      try {
+      } else if (msg.startsWith("checkers:inviteAsk ")) {
         handleInviteAsk(sc, msg.substring(19));
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    } else if (msg.startsWith("checkers:inviteRejected ")) {
-      try {
+      } else if (msg.startsWith("checkers:inviteRejected ")) {
         handleInviteRejected(msg.substring(24));
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    } else if (msg.startsWith("checkers:inviteOk ")) {
-      try {
+      } else if (msg.startsWith("checkers:inviteOk ")) {
         handleInviteOk(sc, msg.substring(18));
-      } catch (IOException e) {
-        e.printStackTrace();
+      } else {
+        log.warn("Got invalid message");
       }
-    } else {
-      log.warn("Got invalid message");
+    } catch (IOException e) {
+      log.warn("Connection error, closing");
+      handleClosedConnection(key, sc);
     }
   }
 
@@ -184,16 +156,16 @@ public class Server implements Callable<Integer> {
   private void handleAccept() throws IOException {
     SocketChannel sc = serverSocketChannel.accept();
     sc.configureBlocking(false);
-    SelectionKey tmp = sc.register(selector, SelectionKey.OP_READ);
-    tmpMap.put(tmp, sc);
+    sc.register(selector, SelectionKey.OP_READ);
     sc.write(ByteBuffer.wrap("checkers:Hello!".getBytes()));
     log.info("Connection Accepted: " + sc.getLocalAddress());
   }
 
   private void handleClosedConnection(SelectionKey key, SocketChannel sc) {
     String nickToDelete = connectedPlayersMap.getKey(sc);
-    connectedPlayersMap.remove(nickToDelete, sc);
-    tmpMap.remove(key, sc);
+    if (nickToDelete != null) {
+      connectedPlayersMap.remove(nickToDelete, sc);
+    }
     for (Iterator<Player> it = hashPlayers.iterator(); it.hasNext(); ) {
       Player player = it.next();
       if (player.getNickname().equals(nickToDelete)) {
@@ -218,9 +190,10 @@ public class Server implements Callable<Integer> {
   }
 
   private void handleInviteAsk(SocketChannel sc, String msg) throws IOException {
-    // FIXME magic number
-    if (msg.length() != 12) {
-      log.warn(String.format("Invalid msg length, got %s should be %s", msg.length(), 12));
+    if (msg.length() != INVITE_CODE_LENGTH) {
+      log.warn(
+          String.format(
+              "Invalid msg length, is %s should be %s", msg.length(), INVITE_CODE_LENGTH));
       return;
     }
     if (!inviteCodeMap.containsKey(msg)) {
@@ -270,22 +243,22 @@ public class Server implements Callable<Integer> {
       sc.write(ByteBuffer.wrap("checkers:error user already present!".getBytes()));
       return;
     }
+    String inviteCode = generateInviteCode();
+    inviteCodeMap.put(inviteCode, sc);
     connectedPlayersMap.put(conf.get().getNickname(), sc);
     hashPlayers.add(new Player(conf.get().getNickname(), conf.get().getProfileImg()));
-    ByteBuffer src = ByteBuffer.wrap(("checkers:confOk " + generateInviteCode(sc) + "!").getBytes());
+    ByteBuffer src = ByteBuffer.wrap(("checkers:confOk " + inviteCode + "!").getBytes());
     sc.write(src);
   }
 
-  public String generateInviteCode(SocketChannel sc) {
-    String uuid = null;
+  public String generateInviteCode() {
+    String code = null;
     for (; ; ) {
-      uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-      if (!inviteCodeMap.containsKey(uuid)) {
-        break;
+      code = UUID.randomUUID().toString().replace("-", "").substring(0, INVITE_CODE_LENGTH);
+      if (!inviteCodeMap.containsKey(code)) {
+        return code;
       }
     }
-    inviteCodeMap.put(uuid, sc);
-    return uuid;
   }
 
   private void handleRandomGame(SelectionKey key, SocketChannel sc) throws IOException {
@@ -320,7 +293,7 @@ public class Server implements Callable<Integer> {
       log.info("Only one player active");
       return Optional.empty();
     }
-    if (connectedPlayersMap.size() - allPlayersInGames.size() < 2) {
+    if (connectedPlayersMap.size() - playersInGames.size() < 2) {
       log.info("Only one player available");
       return Optional.empty();
     }
@@ -332,39 +305,13 @@ public class Server implements Callable<Integer> {
   }
 
   private SocketChannel getRandomPlayerChannel(SocketChannel src) {
-    SocketChannel dst = null;
-    int idx = 0;
-    boolean flag = false;
-    List<Integer> blacklist = new ArrayList<>();
-    for (; ; ) {
-      if (flag) {
-        break;
-      }
-      idx = 0;
-      int random = ThreadLocalRandom.current().nextInt(0, connectedPlayersMap.size());
-      if (blacklist.contains(random)) {
-        continue;
-      }
-      for (SocketChannel sc : connectedPlayersMap.values()) {
-        if (idx == random) {
-          if (sc == src) {
-            if (random == connectedPlayersMap.size() - 1) {
-              blacklist.add(random);
-              break;
-            } else {
-              random++;
-            }
-            idx++;
-            continue;
-          }
-          dst = sc;
-          flag = true;
-          break;
-        }
-        idx++;
+    List<SocketChannel> availablePlayers = new ArrayList<>();
+    for (SocketChannel sc : connectedPlayersMap.values()) {
+      if (!playersInGames.contains(sc) && sc != src) {
+        availablePlayers.add(sc);
       }
     }
-    return dst;
+    return availablePlayers.get(ThreadLocalRandom.current().nextInt(0, availablePlayers.size()));
   }
 
   private byte[] transformPlayersListIntoBytes() {

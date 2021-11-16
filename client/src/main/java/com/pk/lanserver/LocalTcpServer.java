@@ -1,8 +1,6 @@
 package com.pk.lanserver;
 
 import java.io.IOException;
-import java.net.Socket;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
@@ -52,9 +50,9 @@ public interface LocalTcpServer extends Callable<Integer> {
    */
   public void chatSendMsg(String msg) throws IOException;
 
-  public BlockingQueue<String> getBQueueMsgs();
+  public void setNick(String nick);
 
-  public BlockingQueue<Move> getBQueueMoves();
+  public void setProfileImg(String profileImg);
 
   public Future<String> getInviteCode();
 }

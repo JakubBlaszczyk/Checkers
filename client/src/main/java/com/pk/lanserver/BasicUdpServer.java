@@ -32,12 +32,13 @@ public class BasicUdpServer implements UdpServer {
   private Integer remotePort;
   private CompletableFuture<List<Player>> futureActivePlayers = null;
   private Instant start = null;
-  private Vector<Player> qActivePlayers = null;
+  private Vector<Player> activePlayers = null;
   private Set<String> setLocalIps;
 
   private static final Integer TIMEOUT = 4;
 
-  public BasicUdpServer(String nick, String profileImg, Integer localPort, Integer remotePort) throws SocketException {
+  public BasicUdpServer(String nick, String profileImg, Integer localPort, Integer remotePort)
+      throws SocketException {
     setNick(nick);
     setProfileImg(profileImg);
     this.remotePort = remotePort;
@@ -91,13 +92,13 @@ public class BasicUdpServer implements UdpServer {
           }
           String msg = new String(dp.getData(), 0, dp.getLength()).strip();
           log.info("Got msg: <{}>", msg);
-          if (start != null && futureActivePlayers != null) {
+          if (start != null
+              && futureActivePlayers != null
+              && Duration.between(start, Instant.now()).toSeconds() > TIMEOUT) {
             // Magic number
-            if (Duration.between(start, Instant.now()).toSeconds() > TIMEOUT) {
-              futureActivePlayers.complete(qActivePlayers);
-              futureActivePlayers = null;
-              start = null;
-            }
+            futureActivePlayers.complete(activePlayers);
+            futureActivePlayers = null;
+            start = null;
           }
           if (msg.equals("checkers:probe")) {
             DatagramPacket dp2 = prepareResponse(msg, addr);
@@ -109,13 +110,13 @@ public class BasicUdpServer implements UdpServer {
             ds.send(dp2);
           } else if (msg.startsWith("checkers:probeResp ")) {
             if (start != null && futureActivePlayers != null) {
-              if (qActivePlayers.size() > 200) {
-                qActivePlayers.clear();
+              if (activePlayers.size() > 200) {
+                activePlayers.clear();
               }
               Packet packet = new Packet(dp.getAddress(), dp.getPort(), new String(dp.getData()));
               Player player = getActivePlayers(packet);
               if (player != null) {
-                qActivePlayers.add(player);
+                activePlayers.add(player);
               }
             }
           } else {
@@ -123,12 +124,12 @@ public class BasicUdpServer implements UdpServer {
           }
         } catch (SocketTimeoutException ignore) {
           // Magic number
-          if (start != null && futureActivePlayers != null) {
-            if (Duration.between(start, Instant.now()).toSeconds() > TIMEOUT) {
-              futureActivePlayers.complete(qActivePlayers);
-              futureActivePlayers = null;
-              start = null;
-            }
+          if (start != null
+              && futureActivePlayers != null
+              && Duration.between(start, Instant.now()).toSeconds() > TIMEOUT) {
+            futureActivePlayers.complete(activePlayers);
+            futureActivePlayers = null;
+            start = null;
           }
         }
       }
@@ -198,7 +199,7 @@ public class BasicUdpServer implements UdpServer {
     } catch (IOException e) {
       return CompletableFuture.failedFuture(e);
     }
-    qActivePlayers = new Vector<>();
+    activePlayers = new Vector<>();
     futureActivePlayers = new CompletableFuture<>();
     start = Instant.now();
     return futureActivePlayers;

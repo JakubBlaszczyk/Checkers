@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -32,9 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LanTcpServer implements LocalTcpServer {
   private SocketChannel remoteChannel;
-  private BlockingQueue<String> bQueueMsgs;
-  private BlockingQueue<Move> bQueueMoves;
-  private @Getter @Setter @NonNull BlockingQueue<Invite> bQueueInvites;
+  private BlockingQueue<Invite> invites;
+  private BlockingQueue<String> messages;
+  private BlockingQueue<Move> moves;
   private Selector selector;
   private ServerSocketChannel serverSocketChannel;
   private @Setter @NonNull String nick;
@@ -43,7 +42,6 @@ public class LanTcpServer implements LocalTcpServer {
   // invCode -> Connection
   private Map<String, Connection> mapInvToConn;
   private String localIp;
-  private Integer localPort;
   private Integer remotePort;
 
   /**
@@ -55,9 +53,9 @@ public class LanTcpServer implements LocalTcpServer {
    * @throws IOException placeholder
    */
   public LanTcpServer(
-      BlockingQueue<Invite> bQueueInvites,
-      BlockingQueue<String> bQueueMsgs,
-      BlockingQueue<Move> bQueueMoves,
+      BlockingQueue<Invite> invites,
+      BlockingQueue<String> messages,
+      BlockingQueue<Move> moves,
       String localIp,
       Integer localPort,
       Integer remotePort,
@@ -65,9 +63,9 @@ public class LanTcpServer implements LocalTcpServer {
       String profileImg,
       Map<String, Connection> mapInvToConn)
       throws IOException {
-    this.bQueueInvites = bQueueInvites;
-    this.bQueueMsgs = bQueueMsgs;
-    this.bQueueMoves = bQueueMoves;
+    this.invites = invites;
+    this.messages = messages;
+    this.moves = moves;
     selector = Selector.open();
     serverSocketChannel = ServerSocketChannel.open();
     serverSocketChannel.configureBlocking(false);
@@ -76,7 +74,6 @@ public class LanTcpServer implements LocalTcpServer {
     this.profileImg = profileImg;
     this.nick = nick;
     this.localIp = localIp;
-    this.localPort = localPort;
     this.remotePort = remotePort;
     this.mapInvToConn = mapInvToConn;
   }
@@ -130,12 +127,12 @@ public class LanTcpServer implements LocalTcpServer {
   private void innerCall(String msg, SelectionKey key, SocketChannel sc) throws IOException {
     if (msg.startsWith("checkers:msg ")) {
       log.info("Got CHAT type");
-      bQueueMsgs.add(msg.substring(13));
+      messages.add(msg.substring(13));
     } else if (msg.startsWith("checkers:move ")) {
       log.info("Got MOVE type");
-      bQueueMoves.add(Move.fromString(msg.substring(14)));
+      moves.add(Move.fromString(msg.substring(14)));
     } else if (msg.startsWith("checkers:invitationAsk ")) {
-      if (addNewInvite(key, msg, sc, bQueueInvites)) {
+      if (addNewInvite(key, msg, sc, invites)) {
         // TODO ?
         ;
       }
@@ -177,7 +174,7 @@ public class LanTcpServer implements LocalTcpServer {
     scNew.configureBlocking(false);
     selector.wakeup();
     scNew.register(selector, SelectionKey.OP_READ);
-    log.info("scNew connected?");
+    log.info("scNew connected");
     return futureInvite;
   }
 
@@ -268,8 +265,8 @@ public class LanTcpServer implements LocalTcpServer {
   @Override
   public void move(Move move) throws IOException, MoveRejected {
     if (remoteChannel == null) {
-      log.error("Move remotePlayer is null :(");
-      return;
+      log.error("Move remotePlayer is null");
+      throw new IOException("remotePlayer is null");
     }
     remoteChannel.write(ByteBuffer.wrap(Utils.wrapMsg("move " + move.toSendableFormat())));
   }
@@ -277,20 +274,10 @@ public class LanTcpServer implements LocalTcpServer {
   @Override
   public void chatSendMsg(String msg) throws IOException {
     if (remoteChannel == null) {
-      log.error("Move remotePlayer is null :(");
-      return;
+      log.error("Move remotePlayer is null");
+      throw new IOException("remotePlayer is null");
     }
     byte[] encodedMsg = Base64.getEncoder().encode((msg).getBytes());
     remoteChannel.write(ByteBuffer.wrap(("checkers:msg " + new String(encodedMsg) + "!").getBytes()));
-  }
-
-  @Override
-  public BlockingQueue<String> getBQueueMsgs() {
-    return bQueueMsgs;
-  }
-
-  @Override
-  public BlockingQueue<Move> getBQueueMoves() {
-    return bQueueMoves;
   }
 }
