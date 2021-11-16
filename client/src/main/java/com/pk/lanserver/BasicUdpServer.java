@@ -1,5 +1,7 @@
 package com.pk.lanserver;
 
+import com.pk.lanserver.models.Packet;
+import com.pk.lanserver.models.Player;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -20,10 +22,6 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
-
-import com.pk.lanserver.models.Packet;
-import com.pk.lanserver.models.Player;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -31,7 +29,7 @@ public class BasicUdpServer implements UdpServer {
   private String nick;
   private String profileImg;
   private DatagramSocket ds;
-  private Integer port;
+  private Integer remotePort;
   private CompletableFuture<List<Player>> futureActivePlayers = null;
   private Instant start = null;
   private Vector<Player> qActivePlayers = null;
@@ -39,11 +37,11 @@ public class BasicUdpServer implements UdpServer {
 
   private static final Integer TIMEOUT = 4;
 
-  public BasicUdpServer(String nick, String profileImg, Integer port) throws SocketException {
+  public BasicUdpServer(String nick, String profileImg, Integer localPort, Integer remotePort) throws SocketException {
     setNick(nick);
     setProfileImg(profileImg);
-    this.port = port;
-    ds = createSocket(port);
+    this.remotePort = remotePort;
+    ds = createSocket(localPort);
     ds.setBroadcast(true);
     setLocalIps = new HashSet<>();
 
@@ -169,7 +167,7 @@ public class BasicUdpServer implements UdpServer {
       return null;
     }
     byte[] buf = String.format("checkers:probeResp %s %s", nick, profileImg).getBytes();
-    return new DatagramPacket(buf, buf.length, addr, 10000);
+    return new DatagramPacket(buf, buf.length, addr, remotePort);
   }
 
   protected DatagramSocket createSocket(Integer port) throws SocketException {
@@ -195,7 +193,7 @@ public class BasicUdpServer implements UdpServer {
       String msg = "checkers:probe";
       DatagramPacket dp =
           new DatagramPacket(
-              msg.getBytes(), msg.length(), InetAddress.getByName("255.255.255.255"), port);
+              msg.getBytes(), msg.length(), InetAddress.getByName("255.255.255.255"), remotePort);
       ds.send(dp);
     } catch (IOException e) {
       return CompletableFuture.failedFuture(e);

@@ -43,7 +43,8 @@ public class LanTcpServer implements LocalTcpServer {
   // invCode -> Connection
   private Map<String, Connection> mapInvToConn;
   private String localIp;
-  private Integer port;
+  private Integer localPort;
+  private Integer remotePort;
 
   /**
    * Creates instance of BasicTcpServer, configures selector and binds to the port.
@@ -58,7 +59,8 @@ public class LanTcpServer implements LocalTcpServer {
       BlockingQueue<String> bQueueMsgs,
       BlockingQueue<Move> bQueueMoves,
       String localIp,
-      Integer port,
+      Integer localPort,
+      Integer remotePort,
       String nick,
       String profileImg,
       Map<String, Connection> mapInvToConn)
@@ -69,12 +71,13 @@ public class LanTcpServer implements LocalTcpServer {
     selector = Selector.open();
     serverSocketChannel = ServerSocketChannel.open();
     serverSocketChannel.configureBlocking(false);
-    serverSocketChannel.bind(new InetSocketAddress(port));
+    serverSocketChannel.bind(new InetSocketAddress(localPort));
     serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
     this.profileImg = profileImg;
     this.nick = nick;
     this.localIp = localIp;
-    this.port = port;
+    this.localPort = localPort;
+    this.remotePort = remotePort;
     this.mapInvToConn = mapInvToConn;
   }
 
@@ -166,7 +169,7 @@ public class LanTcpServer implements LocalTcpServer {
 
   public Future<Boolean> invite(String inviteCode) throws InvitationRejected, IOException {
     futureInvite = new CompletableFuture<>();
-    SocketAddress sockaddr = new InetSocketAddress(inviteCodeToIp(inviteCode), port);
+    SocketAddress sockaddr = new InetSocketAddress(inviteCodeToIp(inviteCode), remotePort);
     SocketChannel scNew = SocketChannel.open();
     scNew.configureBlocking(true);
     log.info("Connect ret: {}", scNew.connect(sockaddr));
@@ -187,7 +190,7 @@ public class LanTcpServer implements LocalTcpServer {
    */
   protected Socket openSocketToPlayer(InetAddress addr) throws IOException {
     log.info("TCP connecting to {}", addr.getHostAddress());
-    return new Socket(addr, port);
+    return new Socket(addr, remotePort);
   }
 
   public boolean acceptInvitation(String inviteCode) throws IOException {
