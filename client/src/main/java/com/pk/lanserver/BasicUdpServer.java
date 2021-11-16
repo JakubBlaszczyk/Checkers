@@ -135,7 +135,7 @@ public class BasicUdpServer implements UdpServer {
         }
       }
     } catch (Exception e) {
-      log.error("UDP server sie wyjebal, ", e);
+      log.error("UDP server is down, ", e);
       return -1;
     }
   }

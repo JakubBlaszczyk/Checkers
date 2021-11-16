@@ -56,7 +56,5 @@ public interface LocalTcpServer extends Callable<Integer> {
 
   public BlockingQueue<Move> getBQueueMoves();
 
-  public Socket getSocket();
-
   public Future<String> getInviteCode();
 }

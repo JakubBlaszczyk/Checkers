@@ -176,39 +176,6 @@ public class LanTcpServer implements LocalTcpServer {
     scNew.register(selector, SelectionKey.OP_READ);
     log.info("scNew connected?");
     return futureInvite;
-    // Socket sock = openSocketToPlayer(inviteCodeToIp(inviteCode));
-
-    // if (!sock.isConnected()) {
-    //   log.error("Socket is already closed");
-    //   throw new IOException("Socket is already closed");
-    // }
-    // sock.getOutputStream()
-    //     .write(Utils.wrapMsg("invitationAsk " + nick + " " + profileImg + " " + inviteCode));
-    // byte[] buf = new byte[100];
-    // int len = sock.getInputStream().read(buf);
-    // log.debug("Recv len: " + len);
-    // String msg = new String(buf, 0, len);
-    // log.info("Invite msg: <{}>", msg);
-    // if (msg.charAt(msg.length() - 1) == '!') {
-    //   msg = msg.substring(0, msg.length() - 1);
-    // }
-    // if (msg.equals("checkers:invitationOk")) {
-    //   log.info("Invitation accepted");
-    //   // remotePlayer = sock;
-    //   sock.getChannel();
-
-    //   // remoteChannel = sc;
-    //   return CompletableFuture.completedFuture(true);
-    // } else if (msg.equals("checkers:invitationRejected")) {
-    //   log.info("Invite rejected");
-    //   return CompletableFuture.completedFuture(false);
-    //   // throw new InvitationRejected("Invitation rejected");
-    // } else {
-    //   // TODO correct?
-    //   log.info("Got invalid invite reponse");
-    //   return CompletableFuture.completedFuture(false);
-    //   // throw new InvitationRejected("Invalid response: " + msg);
-    // }
   }
 
   /**
@@ -266,11 +233,6 @@ public class LanTcpServer implements LocalTcpServer {
       for (String item : items) {
         log.info(item);
       }
-      // log.info("pre");
-      // key.cancel();
-      // sc.configureBlocking(true);
-      // log.info("post");
-      // Invite invite = new Invite(items[0], items[1], sc.socket(), items[2]);
       Invite invite = new Invite(items[0], items[1], null, items[2]);
       mapInvToConn.put(items[2], new Connection(key, sc));
       log.info("Adding: " + invite.toString());
@@ -327,11 +289,5 @@ public class LanTcpServer implements LocalTcpServer {
   @Override
   public BlockingQueue<Move> getBQueueMoves() {
     return bQueueMoves;
-  }
-
-  @Override
-  public Socket getSocket() {
-    // FIXME still needed?
-    return null;
   }
 }

@@ -6,7 +6,6 @@ import com.pk.lanserver.models.Invite;
 import com.pk.lanserver.models.Move;
 import com.pk.lanserver.models.Player;
 import java.io.IOException;
-import java.net.DatagramSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.List;
@@ -21,9 +20,7 @@ import lombok.Getter;
 public class LanServerController implements ServerController {
   private UdpServer udpServer;
   private LocalTcpServer tcpServer;
-  // FIXME threads num shouldn't be magic number
   private ExecutorService executorService = Executors.newFixedThreadPool(2);
-
   private @Getter Future<Integer> futureUdp;
   private @Getter Future<Integer> futureTcp;
 
