@@ -186,7 +186,7 @@ public class Server implements Callable<Integer> {
     sc.configureBlocking(false);
     SelectionKey tmp = sc.register(selector, SelectionKey.OP_READ);
     tmpMap.put(tmp, sc);
-    sc.write(ByteBuffer.wrap("checkers:Hello".getBytes()));
+    sc.write(ByteBuffer.wrap("checkers:Hello!".getBytes()));
     log.info("Connection Accepted: " + sc.getLocalAddress());
   }
 
@@ -225,7 +225,7 @@ public class Server implements Callable<Integer> {
     }
     if (!inviteCodeMap.containsKey(msg)) {
       log.warn("Message code not found");
-      sc.write(ByteBuffer.wrap("checkers:inviteErr".getBytes()));
+      sc.write(ByteBuffer.wrap("checkers:inviteErr!".getBytes()));
       return;
     }
     Player play = null;
@@ -252,7 +252,7 @@ public class Server implements Callable<Integer> {
 
   private void handleConfig(SocketChannel sc, String msg) throws IOException {
     if (connectedPlayersMap.containsValue(sc)) {
-      sc.write(ByteBuffer.wrap("checkers:confUserTaken".getBytes()));
+      sc.write(ByteBuffer.wrap("checkers:confUserTaken!".getBytes()));
     }
     Optional<Config> conf = parseConfigMessage(msg.substring(16));
     if (conf.isEmpty()) {
@@ -261,18 +261,18 @@ public class Server implements Callable<Integer> {
     }
     Config config = conf.get();
     if (!Base64.isBase64(config.getNickname())) {
-      sc.write(ByteBuffer.wrap("checkers:confBadNick".getBytes()));
+      sc.write(ByteBuffer.wrap("checkers:confBadNick!".getBytes()));
     } else if (!Base64.isBase64(config.getProfileImg())) {
-      sc.write(ByteBuffer.wrap("checkers:confBadImg".getBytes()));
+      sc.write(ByteBuffer.wrap("checkers:confBadImg!".getBytes()));
     }
     if (connectedPlayersMap.containsKey(conf.get().getNickname())) {
       log.warn("User already present on server: " + conf.get().getNickname());
-      sc.write(ByteBuffer.wrap("checkers:error user already present".getBytes()));
+      sc.write(ByteBuffer.wrap("checkers:error user already present!".getBytes()));
       return;
     }
     connectedPlayersMap.put(conf.get().getNickname(), sc);
     hashPlayers.add(new Player(conf.get().getNickname(), conf.get().getProfileImg()));
-    ByteBuffer src = ByteBuffer.wrap(("checkers:confOk " + generateInviteCode(sc)).getBytes());
+    ByteBuffer src = ByteBuffer.wrap(("checkers:confOk " + generateInviteCode(sc) + "!").getBytes());
     sc.write(src);
   }
 
@@ -290,12 +290,12 @@ public class Server implements Callable<Integer> {
 
   private void handleRandomGame(SelectionKey key, SocketChannel sc) throws IOException {
     if (!connectedPlayersMap.containsValue(sc)) {
-      sc.write(ByteBuffer.wrap("checkers:randomMissingConf".getBytes()));
+      sc.write(ByteBuffer.wrap("checkers:randomMissingConf!".getBytes()));
     }
     key.cancel();
     Optional<List<SocketChannel>> sockets = findPlayersToRandomGame(sc);
     if (sockets.isEmpty()) {
-      sc.write(ByteBuffer.wrap("checkers:randomNoPlayers".getBytes()));
+      sc.write(ByteBuffer.wrap("checkers:randomNoPlayers!".getBytes()));
       return;
     }
     List<SocketChannel> tmp = sockets.get();
@@ -303,8 +303,8 @@ public class Server implements Callable<Integer> {
     SocketChannel scTwo = tmp.get(1);
 
     try {
-      scOne.write(ByteBuffer.wrap("checkers:randomStart".getBytes()));
-      scTwo.write(ByteBuffer.wrap("checkers:randomStart".getBytes()));
+      scOne.write(ByteBuffer.wrap("checkers:randomStart!".getBytes()));
+      scTwo.write(ByteBuffer.wrap("checkers:randomStart!".getBytes()));
       scOne.keyFor(selector).attach(new Session(scTwo));
       scTwo.keyFor(selector).attach(new Session(scOne));
     } catch (IOException e) {
