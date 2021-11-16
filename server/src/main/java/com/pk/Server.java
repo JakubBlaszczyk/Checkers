@@ -2,9 +2,9 @@ package com.pk;
 
 import com.pk.models.Config;
 import com.pk.models.Player;
+import com.pk.models.Session;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -98,30 +98,6 @@ public class Server implements Callable<Integer> {
     }
   }
 
-  private void handleAccept() throws IOException {
-    SocketChannel sc = serverSocketChannel.accept();
-    sc.configureBlocking(false);
-    SelectionKey tmp = sc.register(selector, SelectionKey.OP_READ);
-    tmpMap.put(tmp, sc);
-    sc.write(ByteBuffer.wrap("checkers:Hello".getBytes()));
-    log.info("Connection Accepted: " + sc.getLocalAddress());
-  }
-
-  private void handleClosedConnection(SelectionKey key, SocketChannel sc) {
-    String nickToDelete = connectedPlayersMap.getKey(sc);
-    connectedPlayersMap.remove(nickToDelete, sc);
-    tmpMap.remove(key, sc);
-    for (Iterator<Player> it = hashPlayers.iterator(); it.hasNext(); ) {
-      Player player = it.next();
-      if (player.getNickname().equals(nickToDelete)) {
-        it.remove();
-      }
-    }
-    String uuid = inviteCodeMap.getKey(sc);
-    inviteCodeMap.remove(uuid, sc);
-    key.cancel();
-  }
-
   private void handleReadMsg(SelectionKey key) throws IOException {
     SocketChannel sc = (SocketChannel) key.channel();
     ByteBuffer bb = ByteBuffer.allocate(1024);
@@ -129,7 +105,16 @@ public class Server implements Callable<Integer> {
     if (len <= 0) {
       sc.close();
       log.info("Connection closed");
-      handleClosedConnection(key, sc);
+      if (key.attachment() != null) {
+        Session session = (Session) key.attachment();
+        SocketChannel remote = session.getRemote();
+        // TODO add some recovery mechanism ?
+        log.info("One side session closed, closing both sides");
+        handleClosedConnection(key, (SocketChannel) key.channel());
+        handleClosedConnection(remote.keyFor(selector), remote);
+      } else {
+        handleClosedConnection(key, sc);
+      }
       return;
     }
     String msg = new String(bb.array(), 0, len).strip();
@@ -137,6 +122,11 @@ public class Server implements Callable<Integer> {
       msg = msg.substring(0, msg.length() - 1);
     }
     log.info("Message received: <{}>, len: {}", msg, msg.length());
+    if (key.attachment() != null) {
+      log.info("Session msg");
+      handleSessionMsg(msg, key);
+      return;
+    }
     if (msg.startsWith("checkers:config ")) {
       try {
         handleConfig(sc, msg);
@@ -178,6 +168,43 @@ public class Server implements Callable<Integer> {
     }
   }
 
+  private void handleSessionMsg(String msg, SelectionKey key) {
+    Session session = (Session) key.attachment();
+    SocketChannel remote = session.getRemote();
+    try {
+      remote.write(ByteBuffer.wrap(msg.getBytes()));
+    } catch (IOException e) {
+      // TODO add some recovery mechanism ?
+      log.error("Exception in handleSessionMsg, closing both sides: ", e);
+      handleClosedConnection(key, (SocketChannel) key.channel());
+      handleClosedConnection(remote.keyFor(selector), remote);
+    }
+  }
+
+  private void handleAccept() throws IOException {
+    SocketChannel sc = serverSocketChannel.accept();
+    sc.configureBlocking(false);
+    SelectionKey tmp = sc.register(selector, SelectionKey.OP_READ);
+    tmpMap.put(tmp, sc);
+    sc.write(ByteBuffer.wrap("checkers:Hello".getBytes()));
+    log.info("Connection Accepted: " + sc.getLocalAddress());
+  }
+
+  private void handleClosedConnection(SelectionKey key, SocketChannel sc) {
+    String nickToDelete = connectedPlayersMap.getKey(sc);
+    connectedPlayersMap.remove(nickToDelete, sc);
+    tmpMap.remove(key, sc);
+    for (Iterator<Player> it = hashPlayers.iterator(); it.hasNext(); ) {
+      Player player = it.next();
+      if (player.getNickname().equals(nickToDelete)) {
+        it.remove();
+      }
+    }
+    String uuid = inviteCodeMap.getKey(sc);
+    inviteCodeMap.remove(uuid, sc);
+    key.cancel();
+  }
+
   private void handleInviteRejected(String msg) throws IOException {
     SocketChannel channel = inviteCodeMap.get(msg);
     channel.write(ByteBuffer.wrap("checkers:inviteRejected".getBytes()));
@@ -186,24 +213,8 @@ public class Server implements Callable<Integer> {
   private void handleInviteOk(SocketChannel sc, String msg) throws IOException {
     SocketChannel channel = inviteCodeMap.get(msg);
     channel.write(ByteBuffer.wrap(("checkers:inviteOk " + msg).getBytes()));
-    try {
-      sc.keyFor(selector).cancel();
-      sc.configureBlocking(true);
-      channel.keyFor(selector).cancel();
-      channel.configureBlocking(true);
-    } catch (IOException e) {
-      log.error("configureBlocking throw IOException, socketChannel is not canceled (?)", e);
-      return;
-    }
-    Thread th =
-        new Thread(
-            new SessionHandler(
-                connectedPlayersMap.getKey(sc),
-                connectedPlayersMap.getKey(channel),
-                sc.socket(),
-                channel.socket(),
-                connectedPlayersMap));
-    th.start();
+    sc.keyFor(selector).attach(new Session(channel));
+    channel.keyFor(selector).attach(new Session(sc));
   }
 
   private void handleInviteAsk(SocketChannel sc, String msg) throws IOException {
@@ -282,28 +293,29 @@ public class Server implements Callable<Integer> {
       sc.write(ByteBuffer.wrap("checkers:randomMissingConf".getBytes()));
     }
     key.cancel();
-    Optional<List<Socket>> sockets = findPlayersToRandomGame(sc);
+    Optional<List<SocketChannel>> sockets = findPlayersToRandomGame(sc);
     if (sockets.isEmpty()) {
       sc.write(ByteBuffer.wrap("checkers:randomNoPlayers".getBytes()));
       return;
     }
-    List<Socket> tmp = sockets.get();
-    Socket sOne = tmp.get(0);
-    Socket sTwo = tmp.get(1);
-    Thread th =
-        new Thread(
-            new SessionHandler(
-                connectedPlayersMap.getKey(sOne),
-                connectedPlayersMap.getKey(sTwo),
-                sOne,
-                sTwo,
-                connectedPlayersMap));
-    th.start();
-    sOne.getOutputStream().write("checkers:randomStart".getBytes());
-    sTwo.getOutputStream().write("checkers:randomStart".getBytes());
+    List<SocketChannel> tmp = sockets.get();
+    SocketChannel scOne = tmp.get(0);
+    SocketChannel scTwo = tmp.get(1);
+
+    try {
+      scOne.write(ByteBuffer.wrap("checkers:randomStart".getBytes()));
+      scTwo.write(ByteBuffer.wrap("checkers:randomStart".getBytes()));
+      scOne.keyFor(selector).attach(new Session(scTwo));
+      scTwo.keyFor(selector).attach(new Session(scOne));
+    } catch (IOException e) {
+      // TODO add some recovery mechanism ?
+      log.error("Exception in handleRandomGame, closing both sides: ", e);
+      handleClosedConnection(key, (SocketChannel) key.channel());
+      handleClosedConnection(scTwo.keyFor(selector), scTwo);
+    }
   }
 
-  private Optional<List<Socket>> findPlayersToRandomGame(SocketChannel src) {
+  private Optional<List<SocketChannel>> findPlayersToRandomGame(SocketChannel src) {
     if (connectedPlayersMap.size() == 1) {
       log.info("Only one player active");
       return Optional.empty();
@@ -313,16 +325,10 @@ public class Server implements Callable<Integer> {
       return Optional.empty();
     }
     SocketChannel dst = getRandomPlayerChannel(src);
-    SelectionKey key = tmpMap.getKey(dst);
-    key.cancel();
-    try {
-      src.configureBlocking(true);
-      dst.configureBlocking(true);
-    } catch (IOException e) {
-      log.error("configureBlocking throw IOException, socketChannel is not canceled (?)", e);
+    if (dst == null) {
       return Optional.empty();
     }
-    return Optional.of(List.of(src.socket(), dst.socket()));
+    return Optional.of(List.of(src, dst));
   }
 
   private SocketChannel getRandomPlayerChannel(SocketChannel src) {
