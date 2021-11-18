@@ -28,20 +28,20 @@ import org.junit.jupiter.api.Test;
 
 @Slf4j
 public class LanNetworkingTest {
-  private String test;
+  private String inviteCode;
   private String localAddr = "";
-  private Boolean flagFailed = false;
-  private BlockingQueue<Invite> bQIx = new LinkedBlockingQueue<>();
-  private BlockingQueue<String> bQSx = new LinkedBlockingQueue<>();
-  private BlockingQueue<Move> bQMx = new LinkedBlockingQueue<>();
+  private Boolean failed = false;
+  private BlockingQueue<Invite> invitesThread = new LinkedBlockingQueue<>();
+  private BlockingQueue<String> messagesThread = new LinkedBlockingQueue<>();
+  private BlockingQueue<Move> movesThread = new LinkedBlockingQueue<>();
 
   @Test
   public void testIfServerIsAcceptingConnections() throws Exception {
-    BlockingQueue<Invite> bQI = new LinkedBlockingQueue<>();
-    BlockingQueue<String> bQS = new LinkedBlockingQueue<>();
-    BlockingQueue<Move> bQM = new LinkedBlockingQueue<>();
+    BlockingQueue<Invite> invites = new LinkedBlockingQueue<>();
+    BlockingQueue<String> messages = new LinkedBlockingQueue<>();
+    BlockingQueue<Move> moves = new LinkedBlockingQueue<>();
     LocalTcpServer tcpServer =
-        new LanTcpServer(bQI, bQS, bQM, "127.0.0.1", 10000, 10000, "dDI=", "dDI=", new HashMap<>());
+        new LanTcpServer(invites, messages, moves, "127.0.0.1", 10000, 10000, "dDI=", "dDI=", new HashMap<>());
     ExecutorService executorService = Executors.newFixedThreadPool(1);
     Future<Integer> futureTcp = executorService.submit(tcpServer);
     Socket sock = new Socket(InetAddress.getByName("127.0.0.1"), 10000);
@@ -78,9 +78,9 @@ public class LanNetworkingTest {
             try {
               LanServerController wts =
                   new LanServerController(
-                      bQIx,
-                      bQSx,
-                      bQMx,
+                      invitesThread,
+                      messagesThread,
+                      movesThread,
                       localAddr,
                       10000,
                       10001,
@@ -88,17 +88,17 @@ public class LanNetworkingTest {
                       "dGVzdA==",
                       new HashMap<>());
               TimeUnit.SECONDS.sleep(3);
-              test = wts.getInviteCode().get();
-              log.info("Got invite code: {}", test);
+              inviteCode = wts.getInviteCode().get();
+              log.info("Got invite code: {}", inviteCode);
               log.info("Got active players: {}", wts.getActivePlayers().get());
               for (; ; ) {
                 TimeUnit.SECONDS.sleep(1);
-                if (!bQIx.isEmpty()) {
+                if (!invitesThread.isEmpty()) {
                   log.info("Found inv");
                   break;
                 }
               }
-              Invite inv = (Invite) bQIx.poll();
+              Invite inv = (Invite) invitesThread.poll();
               wts.acceptInvitation(inv.getCode());
               wts.move(new Move(1, 2, 3, 4));
               wts.chatSendMsg("tx1");
@@ -109,27 +109,27 @@ public class LanNetworkingTest {
               return;
             } catch (Exception e) {
               log.error("Recv is down: ", e);
-              flagFailed = true;
+              failed = true;
             }
           }
         };
     one.start();
-    BlockingQueue<Invite> bQI = new LinkedBlockingQueue<>();
-    BlockingQueue<String> bQS = new LinkedBlockingQueue<>();
-    BlockingQueue<Move> bQM = new LinkedBlockingQueue<>();
+    BlockingQueue<Invite> invites = new LinkedBlockingQueue<>();
+    BlockingQueue<String> messages = new LinkedBlockingQueue<>();
+    BlockingQueue<Move> moves = new LinkedBlockingQueue<>();
     try {
       LanServerController wts =
           new LanServerController(
-              bQI, bQS, bQM, localAddr, 10001, 10000, "eHh4", "eHh4", new HashMap<>());
+              invites, messages, moves, localAddr, 10001, 10000, "eHh4", "eHh4", new HashMap<>());
       TimeUnit.SECONDS.sleep(3);
       log.info("Got invite code: {}", wts.getInviteCode().get());
       log.info("Got active players: {}", wts.getActivePlayers().get());
       while (true) {
-        if (test != "") {
+        if (inviteCode!= "") {
           break;
         }
       }
-      wts.invite(test).get();
+      wts.invite(inviteCode).get();
       wts.move(new Move(4, 3, 2, 1));
       wts.chatSendMsg("t1");
       wts.chatSendMsg("t2");
@@ -144,17 +144,17 @@ public class LanNetworkingTest {
     } catch (InterruptedException e) {
       ;
     }
-    if (flagFailed) {
+    if (failed) {
       fail("Recv is dead");
     }
-    assertEquals(1, bQS.size());
-    assertEquals("tx1", new String(Base64.getDecoder().decode(bQS.poll())));
-    assertEquals(new Move(1, 2, 3, 4), bQM.poll());
+    assertEquals(1, messages.size());
+    assertEquals("tx1", new String(Base64.getDecoder().decode(messages.poll())));
+    assertEquals(new Move(1, 2, 3, 4), moves.poll());
     //
-    assertEquals(3, bQSx.size());
-    assertEquals("t1", new String(Base64.getDecoder().decode(bQSx.poll())));
-    assertEquals("t2", new String(Base64.getDecoder().decode(bQSx.poll())));
-    assertEquals("t3", new String(Base64.getDecoder().decode(bQSx.poll())));
-    assertEquals(new Move(4, 3, 2, 1), bQMx.poll());
+    assertEquals(3, messagesThread.size());
+    assertEquals("t1", new String(Base64.getDecoder().decode(messagesThread.poll())));
+    assertEquals("t2", new String(Base64.getDecoder().decode(messagesThread.poll())));
+    assertEquals("t3", new String(Base64.getDecoder().decode(messagesThread.poll())));
+    assertEquals(new Move(4, 3, 2, 1), movesThread.poll());
   }
 }
