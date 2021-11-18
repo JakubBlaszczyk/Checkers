@@ -27,3 +27,4 @@ buildNumber.properties
 .project
 .vscode/
 out/*
+server/src/main/resources/server.config
