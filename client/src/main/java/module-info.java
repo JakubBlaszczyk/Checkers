@@ -4,6 +4,7 @@ module com.pk {
   requires javafx.fxml;
   requires static lombok;
   requires org.slf4j;
+  requires java.sql;
 
   opens com.pk.lanserver;
   opens com.pk;
