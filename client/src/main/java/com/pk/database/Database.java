@@ -38,8 +38,7 @@ public class Database implements DatabaseAccess {
 
   public boolean createTables() {
     String creategame = "CREATE TABLE IF NOT EXISTS Game (id INTEGER PRIMARY KEY AUTOINCREMENT, player1 varchar(20), player2 varchar(20))";
-    String createmapHistory = "CREATE TABLE IF NOT EXISTS MapHistory (gameId INTEGER PRIMARY KEY, step int(3), stepBefore varchar(4), stepAfter varchar(4))";
-    //asd
+    String createmapHistory = "CREATE TABLE IF NOT EXISTS MapHistory (gameId INTEGER, step int(3), stepBefore int(2), stepAfter int(2), PRIMARY KEY (gameID, step) ,FOREIGN KEY(gameID) REFERENCES Game(id))";
     try {
       stat.execute(creategame);
 
@@ -66,13 +65,13 @@ public class Database implements DatabaseAccess {
     return true;
   }
 
-  public boolean insertIntoMapHistory(int gameId, int step, String stepBefore, String stepAfter) {
+  public boolean insertIntoMapHistory(int gameId, int step, int stepBefore, int stepAfter) {
     try {
       PreparedStatement prepStmt = conn.prepareStatement("insert into MapHistory values (?, ?, ?, ?);");
       prepStmt.setInt(0, gameId);
       prepStmt.setInt(1, step);
-      prepStmt.setString(2, stepBefore);
-      prepStmt.setString(3, stepAfter);
+      prepStmt.setInt(2, stepBefore);
+      prepStmt.setInt(3, stepAfter);
       prepStmt.execute();
     } catch (SQLException e) {
       System.err.println("Insert MapHistory error");
@@ -105,13 +104,12 @@ public class Database implements DatabaseAccess {
     List<MapHistory> MapHistory = new LinkedList<>();
     try {
       ResultSet result = stat.executeQuery("SELECT * FROM MapHistory");
-      int id, step;
-      String stepBefore, stepAfter;
+      int id, step, stepBefore, stepAfter;
       while (result.next()) {
         id = result.getInt("gameId");
         step = result.getInt("step");
-        stepBefore = result.getString("stepBefore");
-        stepAfter = result.getString("stepAfter");
+        stepBefore = result.getInt("stepBefore");
+        stepAfter = result.getInt("stepAfter");
         MapHistory.add(new MapHistory(id, step, stepBefore, stepAfter));
       }
     } catch (SQLException e) {

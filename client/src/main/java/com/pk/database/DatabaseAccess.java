@@ -6,7 +6,7 @@ public interface DatabaseAccess {
 
   public boolean insertIntoGame(String player1, String player2);
 
-  public boolean insertIntoMapHistory(int gameId, int step, String stepBefore, String stepAfter);
+  public boolean insertIntoMapHistory(int gameId, int step, int stepBefore, int stepAfter);
 
   public List<Game> selectFromGame();
 

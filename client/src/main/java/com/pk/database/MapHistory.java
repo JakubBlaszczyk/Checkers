@@ -3,8 +3,8 @@ package com.pk.database;
 public class MapHistory {
   private int gameId;
   private int step;
-  private String stepBefore;
-  private String stepAfter;
+  private int stepBefore;
+  private int stepAfter;
 
   public int getGameId() {
     return gameId;
@@ -22,26 +22,26 @@ public class MapHistory {
     this.step = step;
   }
 
-  public String getStepBefore() {
+  public int getStepBefore() {
     return stepBefore;
   }
 
-  public void setStepBefore(String stepBefore) {
+  public void setStepBefore(int stepBefore) {
     this.stepBefore = stepBefore;
   }
 
-  public String getStepAfter() {
+  public int getStepAfter() {
     return stepAfter;
   }
 
-  public void setStepAfter(String stepAfter) {
+  public void setStepAfter(int stepAfter) {
     this.stepAfter = stepAfter;
   }
 
   public MapHistory() {
   }
 
-  public MapHistory(int gameId, int step, String stepBefore, String stepAfter) {
+  public MapHistory(int gameId, int step, int stepBefore, int stepAfter) {
     this.gameId = gameId;
     this.step = step;
     this.stepBefore = stepBefore;
