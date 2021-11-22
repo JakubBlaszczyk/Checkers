@@ -1,5 +1,7 @@
 package com.pk.database;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -9,6 +11,7 @@ import java.sql.Statement;
 import java.util.LinkedList;
 import java.util.List;
 
+@Slf4j
 public class Database implements DatabaseAccess {
 
   public static final String DRIVER = "org.sqlite.JDBC";
@@ -17,32 +20,31 @@ public class Database implements DatabaseAccess {
   private Connection conn;
   private Statement stat;
 
-  public Database() {
+  public Database() throws SQLException {
     try {
       Class.forName(Database.DRIVER);
     } catch (ClassNotFoundException e) {
-      System.err.println("Missing driver JDBC");
-      e.printStackTrace();
+      log.error("Missing driver JDBC");
+      throw new SQLException(e);
     }
 
     try {
       conn = DriverManager.getConnection(DB_URL);
       stat = conn.createStatement();
     } catch (SQLException e) {
-      System.err.println("Connection initialization problem");
-      e.printStackTrace();
+      log.error("Connection initialization problem");
+      throw new SQLException(e);
     }
-
     createTables();
   }
 
   public boolean createTables() {
-    String creategame = "CREATE TABLE IF NOT EXISTS Game (id INTEGER PRIMARY KEY AUTOINCREMENT, player1 varchar(20), player2 varchar(20))";
-    String createmapHistory = "CREATE TABLE IF NOT EXISTS MapHistory (gameId INTEGER, step int(3), stepBefore int(2), stepAfter int(2), PRIMARY KEY (gameID, step) ,FOREIGN KEY(gameID) REFERENCES Game(id))";
+    String createGame = "CREATE TABLE IF NOT EXISTS Game (id INTEGER PRIMARY KEY AUTOINCREMENT, player1 varchar(20), player2 varchar(20))";
+    String createMapHistory = "CREATE TABLE IF NOT EXISTS MapHistory (gameId INTEGER, step int(3), stepBefore int(2), stepAfter int(2), PRIMARY KEY (gameID, step) ,FOREIGN KEY(gameID) REFERENCES Game(id))";
     try {
-      stat.execute(creategame);
+      stat.execute(createGame);
 
-      stat.execute(createmapHistory);
+      stat.execute(createMapHistory);
     } catch (SQLException e) {
       System.err.println("Create table error");
       e.printStackTrace();
@@ -82,7 +84,7 @@ public class Database implements DatabaseAccess {
   }
 
   public List<Game> selectFromGame() {
-    List<Game> Game = new LinkedList<>();
+    List<Game> game = new LinkedList<>();
     try {
       ResultSet result = stat.executeQuery("SELECT * FROM Game");
       int gameId;
@@ -91,17 +93,17 @@ public class Database implements DatabaseAccess {
         gameId = result.getInt("id");
         player1 = result.getString("player1");
         player2 = result.getString("player2");
-        Game.add(new Game(gameId, player1, player2));
+        game.add(new Game(gameId, player1, player2));
       }
     } catch (SQLException e) {
       e.printStackTrace();
       return null;
     }
-    return Game;
+    return game;
   }
 
   public List<MapHistory> selectFromMapHistory() {
-    List<MapHistory> MapHistory = new LinkedList<>();
+    List<MapHistory> mapHistory = new LinkedList<>();
     try {
       ResultSet result = stat.executeQuery("SELECT * FROM MapHistory");
       int id, step, stepBefore, stepAfter;
@@ -110,13 +112,13 @@ public class Database implements DatabaseAccess {
         step = result.getInt("step");
         stepBefore = result.getInt("stepBefore");
         stepAfter = result.getInt("stepAfter");
-        MapHistory.add(new MapHistory(id, step, stepBefore, stepAfter));
+        mapHistory.add(new MapHistory(id, step, stepBefore, stepAfter));
       }
     } catch (SQLException e) {
       e.printStackTrace();
       return null;
     }
-    return MapHistory;
+    return mapHistory;
   }
 
   public void closeConnection() {
