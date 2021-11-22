@@ -77,6 +77,11 @@ public class BasicUdpServer implements UdpServer {
     this.profileImg = profileImg;
   }
 
+  @Override
+  public void cleanup() {
+    ds.close();
+  }
+
   /** */
   @Override
   public Integer call() throws Exception {

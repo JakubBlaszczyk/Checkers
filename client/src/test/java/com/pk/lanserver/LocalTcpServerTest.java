@@ -1,12 +1,9 @@
-package com.pk.server;
+package com.pk.lanserver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.pk.lanserver.LanServerController;
-import com.pk.lanserver.LanTcpServer;
-import com.pk.lanserver.LocalTcpServer;
 import com.pk.lanserver.models.Invite;
 import com.pk.lanserver.models.Move;
 import java.net.Inet4Address;
@@ -27,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
-public class LanNetworkingTest {
+public class LocalTcpServerTest {
   private String inviteCode;
   private String localAddr = "";
   private Boolean failed = false;
@@ -75,8 +72,9 @@ public class LanNetworkingTest {
     Thread one =
         new Thread() {
           public void run() {
+            LanServerController wts = null;
             try {
-              LanServerController wts =
+              wts =
                   new LanServerController(
                       invitesThread,
                       messagesThread,
@@ -110,6 +108,10 @@ public class LanNetworkingTest {
             } catch (Exception e) {
               log.error("Recv is down: ", e);
               failed = true;
+            } finally {
+              if (wts != null) {
+                wts.cleanup();
+              }
             }
           }
         };
@@ -117,8 +119,9 @@ public class LanNetworkingTest {
     BlockingQueue<Invite> invites = new LinkedBlockingQueue<>();
     BlockingQueue<String> messages = new LinkedBlockingQueue<>();
     BlockingQueue<Move> moves = new LinkedBlockingQueue<>();
+    LanServerController wts = null;
     try {
-      LanServerController wts =
+      wts =
           new LanServerController(
               invites, messages, moves, localAddr, 10001, 10000, "eHh4", "eHh4", new HashMap<>());
       TimeUnit.SECONDS.sleep(3);
@@ -138,6 +141,10 @@ public class LanNetworkingTest {
       one.interrupt();
     } catch (Exception e) {
       fail("Send is dead", e);
+    } finally {
+      if (wts != null) {
+        wts.cleanup();
+      }
     }
     try {
       one.join();

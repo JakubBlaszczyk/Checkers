@@ -78,4 +78,12 @@ public class LanServerController implements ServerController {
   public Future<String> getInviteCode() {
     return tcpServer.getInviteCode();
   }
+
+  @Override
+  public void cleanup() {
+    try {
+      tcpServer.cleanup();
+    } catch (IOException ignore) {}
+    udpServer.cleanup();
+  }
 }

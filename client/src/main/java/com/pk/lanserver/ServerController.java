@@ -55,4 +55,6 @@ public interface ServerController {
   public boolean acceptInvitation(String inviteCode) throws IOException;
 
   public Future<String> getInviteCode();
+
+  public void cleanup();
 }
