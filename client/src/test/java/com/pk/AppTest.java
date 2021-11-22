@@ -34,7 +34,11 @@ public class AppTest {
     exampleBigBoard.add(exampleSmallBoard);
     exampleBigBoard.add(exampleSmallBoard);
     exampleBigBoard.add(exampleSmallBoard);
-    Logic finalLogic = new BasicLogic(exampleBigBoard);
-    assertEquals("WBB\nWBB\nWBB\n", finalLogic.toString());
+    try {
+      Logic finalLogic = new BasicLogic(exampleBigBoard);
+      assertEquals("WBB\nWBB\nWBB\n", finalLogic.toString());
+    } catch (Exception e) {
+      assert (false);
+    }
   }
 }
