@@ -22,6 +22,9 @@ public class BasicLogic implements Logic {
     }
     this.board = new ArrayList<>(board.size());
     for (int i = 0; i < board.size(); ++i) {
+      if (board.get(i).size() < 2 || board.get(i).size() % 2 != 0) {
+        throw new BadBoardGiven("This format of board is not supported\n");
+      }
       this.board.add(new ArrayList<>(board.get(i)));
     }
     // analyze white and black positions for the first time
