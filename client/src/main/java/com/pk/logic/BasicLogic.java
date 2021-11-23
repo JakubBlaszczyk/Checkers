@@ -81,7 +81,15 @@ public class BasicLogic implements Logic {
       throws MoreThanOneMoveMade, VerticalOrHorizontalMove, MandatoryKillMove, OverlappingPieces,
       JumpedOverSameColorPiece, JumpedOverMoreThanOnePiece, JumpedOverAlreadyKilledPiece, MoreThanOneTileMove {
     checkCoordinatesDiagonal(x, y);
+    checkCoordinatesOverlapping(x, y);
     return new ArrayList<>(0);
+  }
+
+  private void checkCoordinatesOverlapping(Integer x, Integer y) throws OverlappingPieces {
+    // take into consideration Killed pieces and their behavior
+    if (this.board.get(x).get(y).equals(Piece.EMPTY)) {
+      throw new OverlappingPieces();
+    }
   }
 
   private void checkCoordinatesDiagonal(Integer x, Integer y) throws VerticalOrHorizontalMove {
