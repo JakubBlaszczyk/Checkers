@@ -80,7 +80,14 @@ public class BasicLogic implements Logic {
   public List<List<Piece>> updateV2(Integer x, Integer y, Piece affiliation)
       throws MoreThanOneMoveMade, VerticalOrHorizontalMove, MandatoryKillMove, OverlappingPieces,
       JumpedOverSameColorPiece, JumpedOverMoreThanOnePiece, JumpedOverAlreadyKilledPiece, MoreThanOneTileMove {
+    checkCoordinatesDiagonal(x, y);
     return new ArrayList<>(0);
+  }
+
+  private void checkCoordinatesDiagonal(Integer x, Integer y) throws VerticalOrHorizontalMove {
+    if ((x % 2 == 1 && y % 2 == 0) || (x % 2 == 0 && y % 2 == 1)) {
+      throw new VerticalOrHorizontalMove();
+    }
   }
 
   private void checkForDiagonal() throws BadBoardGiven {
