@@ -74,8 +74,14 @@ public class BasicLogic implements Logic {
     return new ArrayList<>(0);
   }
 
+  public List<List<Piece>> updateV2(Integer x, Integer y, Piece affiliation)
+      throws MoreThanOneMoveMade, VerticalOrHorizontalMove, MandatoryKillMove, OverlappingPieces,
+      JumpedOverSameColorPiece, JumpedOverMoreThanOnePiece, JumpedOverAlreadyKilledPiece, MoreThanOneTileMove {
+    return new ArrayList<>(0);
+  }
+
   /**
-   * Returns indecies of moved pawns. New board pawn is hidden in var +=
+   * Returns indices of moved pawns. New board pawn is hidden in var +=
    * this.board.size() * index. Old board pawn is hidden in var += index.
    */
   private Integer getMoveIndex(List<PiecePosition> white, List<PiecePosition> black, Boolean whiteMove) {
