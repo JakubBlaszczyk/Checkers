@@ -74,8 +74,11 @@ public class BasicLogic implements Logic {
         throw new MandatoryKillMove();
       } else {
         Boolean isKillMove = isKillMove(board, oldPiece, newPiece, whiteMove);
+        // last check from check series
         checkOneTileMove(board, oldPiece, newPiece, whiteMove, isKillMove);
         markKilledPiece(board, oldPiece, newPiece, isKillMove);
+        updateBoardWithKings(board, oldPiece, newPiece);
+        updateBoardWithNewMove(board, oldPiece, newPiece);
       }
     }
   }
@@ -123,6 +126,35 @@ public class BasicLogic implements Logic {
       }
     }
     throw new RuntimeException();
+  }
+
+  private void updateBoardWithKings(List<List<Piece>> board, PiecePosition oldPiece, PiecePosition newPiece) {
+    // how pawns are arranged on board
+    // y axis will be "final"
+    for (int i = 0; i < board.size(); ++i) {
+      if (board.get(i).get(board.size() - 1).equals(Piece.WHITE_PAWN)) {
+        if (newPiece.getAffiliation().equals(Piece.WHITE_PAWN)) {
+          newPiece.setAffiliation(Piece.WHITE_KING);
+        } else {
+          throw new RuntimeException("Something went wrong with King updates! Oh no");
+        }
+      }
+    }
+
+    for (int i = 0; i < board.size(); ++i) {
+      if (board.get(i).get(0).equals(Piece.BLACK_PAWN)) {
+        if (newPiece.getAffiliation().equals(Piece.BLACK_PAWN)) {
+          newPiece.setAffiliation(Piece.BLACK_KING);
+        } else {
+          throw new RuntimeException("Something went wrong with King updates! Oh no");
+        }
+      }
+    }
+  }
+
+  private void updateBoardWithNewMove(List<List<Piece>> board, PiecePosition oldPiece, PiecePosition newPiece) {
+    board.get(oldPiece.getX()).set(oldPiece.getY(), Piece.EMPTY);
+    board.get(newPiece.getX()).set(newPiece.getY(), newPiece.getAffiliation());
   }
 
   // you can take just PiecePositions that changed and compare those, nothing more
