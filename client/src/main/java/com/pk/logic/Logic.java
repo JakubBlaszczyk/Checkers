@@ -28,9 +28,9 @@ public interface Logic {
      * 
      * @param board next state of a board
      * 
-     * @return returns whos move is next, 0 when black 1 when white
+     * @return returns whose move is next, 0 when black 1 when white
      */
-    public Boolean update(List<List<Piece>> board)
+    public List<List<Piece>> update(List<List<Piece>> board)
             throws MoreThanOneMoveMade, VerticalOrHorizontalMove, MandatoryKillMove, OverlappingPieces,
             JumpedOverSameColorPiece, JumpedOverMoreThanOnePiece, JumpedOverAlreadyKilledPiece, MoreThanOneTileMove;
 }

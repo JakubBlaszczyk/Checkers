@@ -29,30 +29,16 @@ public class BasicLogic implements Logic {
     this.black = findAllBlack(board);
   }
 
-  public Boolean update(List<List<Piece>> board)
+  public List<List<Piece>> update(List<List<Piece>> board)
       throws MoreThanOneMoveMade, VerticalOrHorizontalMove, MandatoryKillMove, OverlappingPieces,
       JumpedOverSameColorPiece, JumpedOverMoreThanOnePiece, JumpedOverAlreadyKilledPiece, MoreThanOneTileMove {
     List<PiecePosition> white = findAllWhite(board);
     List<PiecePosition> black = findAllBlack(board);
-
-    findOneProperMove(board);
-
-    // when there will be sucessful update then push this.board to this.boardOld
-
-    return false;
-  }
-
-  private void findOneProperMove(List<List<Piece>> board)
-      throws MoreThanOneMoveMade, VerticalOrHorizontalMove, MandatoryKillMove, OverlappingPieces,
-      JumpedOverSameColorPiece, JumpedOverMoreThanOnePiece, JumpedOverAlreadyKilledPiece, MoreThanOneTileMove {
-    List<PiecePosition> white = findAllWhite(board);
-    List<PiecePosition> black = findAllBlack(board);
-    Boolean wasKillMove;
     // first check for rules violation then we can return proper move
     isNonDiagonalMove(white, black);
     isOverlappingMove(white, black);
     Boolean killMove = wasKillMove();
-    Boolean oneMove = isOneMove(white, black, killMove);
+    isOneMove(white, black, killMove);
     Boolean whiteMove = isWhiteMove(white);
     Integer moveIndex = getMoveIndex(white, black, whiteMove);
     Integer newBoardIndex = moveIndex / this.board.size();
@@ -79,8 +65,10 @@ public class BasicLogic implements Logic {
         markKilledPiece(board, oldPiece, newPiece, isKillMove);
         updateBoardWithKings(board, oldPiece, newPiece);
         updateBoardWithNewMove(board, oldPiece, newPiece);
+        return this.board;
       }
     }
+    return new ArrayList<>(0);
   }
 
   /**
