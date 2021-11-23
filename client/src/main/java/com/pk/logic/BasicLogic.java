@@ -30,6 +30,9 @@ public class BasicLogic implements Logic {
     // analyze white and black positions for the first time
     this.white = findAllWhite(board);
     this.black = findAllBlack(board);
+
+    // check if diagonals aren't occupied
+    checkForDiagonal();
   }
 
   public List<List<Piece>> update(List<List<Piece>> board)
@@ -78,6 +81,21 @@ public class BasicLogic implements Logic {
       throws MoreThanOneMoveMade, VerticalOrHorizontalMove, MandatoryKillMove, OverlappingPieces,
       JumpedOverSameColorPiece, JumpedOverMoreThanOnePiece, JumpedOverAlreadyKilledPiece, MoreThanOneTileMove {
     return new ArrayList<>(0);
+  }
+
+  private void checkForDiagonal() throws BadBoardGiven {
+    for (int i = 0; i < this.white.size(); ++i) {
+      if ((this.white.get(i).getX() % 2 == 1 && this.white.get(i).getY() % 2 == 0)
+          || (this.white.get(i).getX() % 2 == 0 && this.white.get(i).getY() % 2 == 1)) {
+        throw new BadBoardGiven("Diagonals are taken!");
+      }
+    }
+    for (int i = 0; i < this.black.size(); ++i) {
+      if ((this.black.get(i).getX() % 2 == 1 && this.black.get(i).getY() % 2 == 0)
+          || (this.black.get(i).getX() % 2 == 0 && this.black.get(i).getY() % 2 == 1)) {
+        throw new BadBoardGiven("Diagonals are taken!");
+      }
+    }
   }
 
   /**
@@ -725,15 +743,15 @@ public class BasicLogic implements Logic {
   private void isNonDiagonalMove(List<PiecePosition> white, List<PiecePosition> black) throws VerticalOrHorizontalMove {
 
     for (int i = 0; i < white.size(); ++i) {
-      if (white.get(i).getX() % 2 == 1 && white.get(i).getY() % 2 == 0
-          || white.get(i).getX() % 2 == 0 && white.get(i).getY() % 2 == 1) {
+      if ((white.get(i).getX() % 2 == 1 && white.get(i).getY() % 2 == 0)
+          || (white.get(i).getX() % 2 == 0 && white.get(i).getY() % 2 == 1)) {
         throw new VerticalOrHorizontalMove("White made illegal move\n");
       }
     }
 
     for (int i = 0; i < black.size(); ++i) {
-      if (black.get(i).getX() % 2 == 1 && black.get(i).getY() % 2 == 0
-          || black.get(i).getX() % 2 == 0 && black.get(i).getY() % 2 == 1) {
+      if ((black.get(i).getX() % 2 == 1 && black.get(i).getY() % 2 == 0)
+          || (black.get(i).getX() % 2 == 0 && black.get(i).getY() % 2 == 1)) {
         throw new VerticalOrHorizontalMove("Black made illegal move\n");
       }
     }
