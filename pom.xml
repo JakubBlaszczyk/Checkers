@@ -29,6 +29,7 @@
     <commons-collections4.version>4.4</commons-collections4.version>
     <commons-codec.version>1.15</commons-codec.version>
     <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+    <sqlite-jbdc.version>3.36.0.3</sqlite-jbdc.version>
   </properties>
   <modules>
     <module>client</module>
