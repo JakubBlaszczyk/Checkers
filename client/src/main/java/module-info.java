@@ -1,9 +1,6 @@
 module com.pk {
-    requires javafx.controls;
     requires javafx.graphics;
     requires javafx.fxml;
-    requires javafx.swing;
-    requires javafx.media;
     requires transitive javafx.controls;
     requires static lombok;
     requires org.slf4j;

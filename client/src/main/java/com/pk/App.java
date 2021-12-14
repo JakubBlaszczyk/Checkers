@@ -1,4 +1,4 @@
-package com.pk.checkers;
+package com.pk;
 
 import javafx.application.Application;
 import javafx.scene.Group;
@@ -6,6 +6,10 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import com.pk.checkers.Tile;
+import com.pk.checkers.PieceType;
+import com.pk.checkers.Piece;
+
 
 public class App extends Application {
 
@@ -50,7 +54,7 @@ public class App extends Application {
         return root;
     }
 
-    
+
     @Override
     public void start(Stage primaryStage) throws Exception {
         Scene scene = new Scene(createContent());
@@ -60,8 +64,7 @@ public class App extends Application {
     }
 
     private Piece makePiece(PieceType type, int x, int y) {
-        Piece piece = new Piece(type, x, y);
-        return piece;
+        return new Piece(type, x, y);
     }
 
     public static void main(String[] args) {
