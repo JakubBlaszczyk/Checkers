@@ -1,8 +1,8 @@
-package com.pk.checkers;
+package com.pk.frontend.checkers;
 
+import com.pk.frontend.board.BoardController;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import com.pk.App;
 
 
 public class Tile extends Rectangle {
@@ -22,10 +22,10 @@ public class Tile extends Rectangle {
     }
 
     public Tile(boolean light, int x, int y) {
-        setWidth(App.TILE_SIZE);
-        setHeight(App.TILE_SIZE);
+        setWidth(BoardController.TILE_SIZE);
+        setHeight(BoardController.TILE_SIZE);
 
-        relocate(x * App.TILE_SIZE, y * App.TILE_SIZE);
+        relocate(x * BoardController.TILE_SIZE, y * BoardController.TILE_SIZE);
 
         setFill(light ? Color.valueOf("#ffffd2") : Color.valueOf("#ffc0cb"));
     }
