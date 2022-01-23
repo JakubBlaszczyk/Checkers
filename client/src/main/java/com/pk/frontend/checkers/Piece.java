@@ -1,11 +1,11 @@
-package com.pk.checkers;
+package com.pk.frontend.checkers;
 
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.SVGPath;
 
-import static com.pk.App.TILE_SIZE;
+import static com.pk.frontend.board.BoardController.TILE_SIZE;
 
 public class Piece extends StackPane {
 

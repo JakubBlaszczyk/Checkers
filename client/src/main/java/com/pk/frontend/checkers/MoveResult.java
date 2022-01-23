@@ -1,4 +1,4 @@
-package com.pk.checkers;
+package com.pk.frontend.checkers;
 
 
 public class MoveResult {

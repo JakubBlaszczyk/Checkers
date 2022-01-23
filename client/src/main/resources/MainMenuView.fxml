@@ -33,7 +33,7 @@
    <center>
       <StackPane fx:id="stackPane" prefHeight="150.0" prefWidth="200.0" style="-fx-background-color: #F2BBC9;" BorderPane.alignment="CENTER">
          <children>
-            <Button fx:id="hotseat" mnemonicParsing="false" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%hotseat" StackPane.alignment="CENTER">
+            <Button fx:id="hotseat" mnemonicParsing="false" onAction="#showBoard" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%hotseat" StackPane.alignment="CENTER">
                <StackPane.margin>
                   <Insets bottom="300.0" />
                </StackPane.margin>

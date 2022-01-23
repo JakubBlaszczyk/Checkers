@@ -1,6 +1,8 @@
 package com.pk.frontend.menu;
 
 
+import com.pk.App;
+import com.pk.frontend.board.BoardController;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.css.converter.ColorConverter;
@@ -56,6 +58,8 @@ public class MainMenuController {
     @FXML
     private StackPane stackPane;
 
+    private BoardController boardController = new BoardController();
+
 
     public void switchLanguageToEnglish(){
         setLanguage("en_US");
@@ -109,5 +113,12 @@ public class MainMenuController {
         tilePane.setMinSize(600,600);
         stackPane.getChildren().add(tilePane);
 
+    }
+
+    public void showBoard(ActionEvent actionEvent) throws IOException {
+      hotseat.setVisible(false);
+      multiplayer.setVisible(false);
+      exit.setVisible(false);
+      App.showBoardScene();
     }
 }

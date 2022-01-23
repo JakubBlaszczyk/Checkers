@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pk.frontend.board.BoardController">
+   <center>
+      <StackPane fx:id="stackPane" prefHeight="150.0" prefWidth="200.0" style="-fx-background-color: #F2BBC9;" BorderPane.alignment="CENTER">
+         <children>
+            <Button mnemonicParsing="false" onAction="#createContent" text="START" />
+         </children>
+      </StackPane>
+   </center>
+   <top>
+     <MenuBar style="-fx-background-color: #F2EEEB;" BorderPane.alignment="CENTER">
+       <menus>
+         <Menu fx:id="game" mnemonicParsing="false" text="%game">
+           <items>
+             <MenuItem fx:id="returnToMenu" mnemonicParsing="false" text="%returnToMenu" />
+             <MenuItem fx:id="leaveGame" mnemonicParsing="false" text="%leaveGame" />
+           </items>
+         </Menu>
+         <Menu fx:id="help" mnemonicParsing="false" text="%help">
+           <items>
+             <MenuItem fx:id="rules" mnemonicParsing="false" text="%rules" />
+             <MenuItem fx:id="creators" mnemonicParsing="false" onAction="#showCreators" text="%creators" />
+           </items>
+         </Menu>
+         <Menu fx:id="language" mnemonicParsing="false" text="%language">
+           <items>
+             <MenuItem fx:id="polish" mnemonicParsing="false" onAction="#switchLanguageToPolish" text="%polish" />
+             <MenuItem fx:id="english" mnemonicParsing="false" onAction="#switchLanguageToEnglish" text="%english" />
+           </items>
+         </Menu>
+       </menus>
+     </MenuBar>
+   </top>
+</BorderPane>
