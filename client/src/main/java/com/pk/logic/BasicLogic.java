@@ -22,37 +22,29 @@ public class BasicLogic implements Logic {
     }
     this.board = new ArrayList<>(board.size());
     for (int i = 0; i < board.size(); ++i) {
+      if (board.get(i).size() < 2 || board.get(i).size() % 2 != 0) {
+        throw new BadBoardGiven("This format of board is not supported\n");
+      }
       this.board.add(new ArrayList<>(board.get(i)));
     }
     // analyze white and black positions for the first time
     this.white = findAllWhite(board);
     this.black = findAllBlack(board);
+
+    // check if diagonals aren't occupied
+    checkForDiagonal();
   }
 
-  public Boolean update(List<List<Piece>> board)
+  public List<List<Piece>> update(List<List<Piece>> board)
       throws MoreThanOneMoveMade, VerticalOrHorizontalMove, MandatoryKillMove, OverlappingPieces,
       JumpedOverSameColorPiece, JumpedOverMoreThanOnePiece, JumpedOverAlreadyKilledPiece, MoreThanOneTileMove {
     List<PiecePosition> white = findAllWhite(board);
     List<PiecePosition> black = findAllBlack(board);
-
-    findOneProperMove(board);
-
-    // when there will be sucessful update then push this.board to this.boardOld
-
-    return false;
-  }
-
-  private void findOneProperMove(List<List<Piece>> board)
-      throws MoreThanOneMoveMade, VerticalOrHorizontalMove, MandatoryKillMove, OverlappingPieces,
-      JumpedOverSameColorPiece, JumpedOverMoreThanOnePiece, JumpedOverAlreadyKilledPiece, MoreThanOneTileMove {
-    List<PiecePosition> white = findAllWhite(board);
-    List<PiecePosition> black = findAllBlack(board);
-    Boolean wasKillMove;
     // first check for rules violation then we can return proper move
     isNonDiagonalMove(white, black);
     isOverlappingMove(white, black);
     Boolean killMove = wasKillMove();
-    Boolean oneMove = isOneMove(white, black, killMove);
+    isOneMove(white, black, killMove);
     Boolean whiteMove = isWhiteMove(white);
     Integer moveIndex = getMoveIndex(white, black, whiteMove);
     Integer newBoardIndex = moveIndex / this.board.size();
@@ -74,14 +66,55 @@ public class BasicLogic implements Logic {
         throw new MandatoryKillMove();
       } else {
         Boolean isKillMove = isKillMove(board, oldPiece, newPiece, whiteMove);
+        // last check from check series
         checkOneTileMove(board, oldPiece, newPiece, whiteMove, isKillMove);
         markKilledPiece(board, oldPiece, newPiece, isKillMove);
+        updateBoardWithKings(board, oldPiece, newPiece);
+        updateBoardWithNewMove(board, oldPiece, newPiece);
+        return this.board;
+      }
+    }
+    return new ArrayList<>(0);
+  }
+
+  public List<List<Piece>> updateV2(Integer x, Integer y, Piece affiliation)
+      throws MoreThanOneMoveMade, VerticalOrHorizontalMove, MandatoryKillMove, OverlappingPieces,
+      JumpedOverSameColorPiece, JumpedOverMoreThanOnePiece, JumpedOverAlreadyKilledPiece, MoreThanOneTileMove {
+    checkCoordinatesDiagonal(x, y);
+    checkCoordinatesOverlapping(x, y);
+    return new ArrayList<>(0);
+  }
+
+  private void checkCoordinatesOverlapping(Integer x, Integer y) throws OverlappingPieces {
+    // take into consideration Killed pieces and their behavior
+    if (this.board.get(x).get(y).equals(Piece.EMPTY)) {
+      throw new OverlappingPieces();
+    }
+  }
+
+  private void checkCoordinatesDiagonal(Integer x, Integer y) throws VerticalOrHorizontalMove {
+    if ((x % 2 == 1 && y % 2 == 0) || (x % 2 == 0 && y % 2 == 1)) {
+      throw new VerticalOrHorizontalMove();
+    }
+  }
+
+  private void checkForDiagonal() throws BadBoardGiven {
+    for (int i = 0; i < this.white.size(); ++i) {
+      if ((this.white.get(i).getX() % 2 == 1 && this.white.get(i).getY() % 2 == 0)
+          || (this.white.get(i).getX() % 2 == 0 && this.white.get(i).getY() % 2 == 1)) {
+        throw new BadBoardGiven("Diagonals are taken!");
+      }
+    }
+    for (int i = 0; i < this.black.size(); ++i) {
+      if ((this.black.get(i).getX() % 2 == 1 && this.black.get(i).getY() % 2 == 0)
+          || (this.black.get(i).getX() % 2 == 0 && this.black.get(i).getY() % 2 == 1)) {
+        throw new BadBoardGiven("Diagonals are taken!");
       }
     }
   }
 
   /**
-   * Returns indecies of moved pawns. New board pawn is hidden in var +=
+   * Returns indices of moved pawns. New board pawn is hidden in var +=
    * this.board.size() * index. Old board pawn is hidden in var += index.
    */
   private Integer getMoveIndex(List<PiecePosition> white, List<PiecePosition> black, Boolean whiteMove) {
@@ -123,6 +156,35 @@ public class BasicLogic implements Logic {
       }
     }
     throw new RuntimeException();
+  }
+
+  private void updateBoardWithKings(List<List<Piece>> board, PiecePosition oldPiece, PiecePosition newPiece) {
+    // how pawns are arranged on board
+    // y axis will be "final"
+    for (int i = 0; i < board.size(); ++i) {
+      if (board.get(i).get(board.size() - 1).equals(Piece.WHITE_PAWN)) {
+        if (newPiece.getAffiliation().equals(Piece.WHITE_PAWN)) {
+          newPiece.setAffiliation(Piece.WHITE_KING);
+        } else {
+          throw new RuntimeException("Something went wrong with King updates! Oh no");
+        }
+      }
+    }
+
+    for (int i = 0; i < board.size(); ++i) {
+      if (board.get(i).get(0).equals(Piece.BLACK_PAWN)) {
+        if (newPiece.getAffiliation().equals(Piece.BLACK_PAWN)) {
+          newPiece.setAffiliation(Piece.BLACK_KING);
+        } else {
+          throw new RuntimeException("Something went wrong with King updates! Oh no");
+        }
+      }
+    }
+  }
+
+  private void updateBoardWithNewMove(List<List<Piece>> board, PiecePosition oldPiece, PiecePosition newPiece) {
+    board.get(oldPiece.getX()).set(oldPiece.getY(), Piece.EMPTY);
+    board.get(newPiece.getX()).set(newPiece.getY(), newPiece.getAffiliation());
   }
 
   // you can take just PiecePositions that changed and compare those, nothing more
@@ -696,15 +758,15 @@ public class BasicLogic implements Logic {
   private void isNonDiagonalMove(List<PiecePosition> white, List<PiecePosition> black) throws VerticalOrHorizontalMove {
 
     for (int i = 0; i < white.size(); ++i) {
-      if (white.get(i).getX() % 2 == 1 && white.get(i).getY() % 2 == 0
-          || white.get(i).getX() % 2 == 0 && white.get(i).getY() % 2 == 1) {
+      if ((white.get(i).getX() % 2 == 1 && white.get(i).getY() % 2 == 0)
+          || (white.get(i).getX() % 2 == 0 && white.get(i).getY() % 2 == 1)) {
         throw new VerticalOrHorizontalMove("White made illegal move\n");
       }
     }
 
     for (int i = 0; i < black.size(); ++i) {
-      if (black.get(i).getX() % 2 == 1 && black.get(i).getY() % 2 == 0
-          || black.get(i).getX() % 2 == 0 && black.get(i).getY() % 2 == 1) {
+      if ((black.get(i).getX() % 2 == 1 && black.get(i).getY() % 2 == 0)
+          || (black.get(i).getX() % 2 == 0 && black.get(i).getY() % 2 == 1)) {
         throw new VerticalOrHorizontalMove("Black made illegal move\n");
       }
     }
