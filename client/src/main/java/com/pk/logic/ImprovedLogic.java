@@ -28,13 +28,13 @@ public class ImprovedLogic implements Logic {
 
     // initialize black and white pawns
     for (int i = 0, j = 1; i < size; i = i + 2, j = j + 2) {
-      this.board.get(i).set(0, LogicTile.WHITE_PAWN);
-      this.board.get(j).set(1, LogicTile.WHITE_PAWN);
-      this.board.get(i).set(size - 2, LogicTile.BLACK_PAWN);
-      this.board.get(j).set(size - 1, LogicTile.BLACK_PAWN);
+      this.board.get(i).set(0, LogicTile.BLACK_PAWN);
+      this.board.get(j).set(1, LogicTile.BLACK_PAWN);
+      this.board.get(i).set(size - 2, LogicTile.WHITE_PAWN);
+      this.board.get(j).set(size - 1, LogicTile.WHITE_PAWN);
     }
 
-    turn = LogicTile.WHITE;
+    turn = LogicTile.BLACK;
   }
 
   private Boolean isDiagonalMove() {
@@ -64,10 +64,10 @@ public class ImprovedLogic implements Logic {
     // if black start from top then this is incorrect
     log.debug("validate direction this.oldPiece {}", this.oldPiece.toString());
     if (this.oldPiece.isBlack()) {
-      return oldY - this.newY > 0;
+      return oldY - this.newY < 0;
     }
     if (this.oldPiece.isWhite()) {
-      return oldY - this.newY < 0;
+      return oldY - this.newY > 0;
     }
     return false;
   }
