@@ -42,16 +42,18 @@ public class ImprovedLogic implements Logic {
     this.oldPiece = this.board.get(oldX).get(oldY);
     this.newX = newX;
     this.newY = newY;
+    this.oldX = oldX;
+    this.oldY = oldY;
     log.debug("isDiagonalMove() {}", isDiagonalMove());
-    log.debug("isOverlappingMove() {}", isOverlappingMove(oldX, oldY));
-    if (Boolean.FALSE.equals(isDiagonalMove()) || Boolean.TRUE.equals(isOverlappingMove(oldX, oldY))) {
+    log.debug("isOverlappingMove() {}", isOverlappingMove());
+    if (Boolean.FALSE.equals(isDiagonalMove()) || Boolean.TRUE.equals(isOverlappingMove())) {
       return MoveType.NONE;
     }
-    Integer distance = calculateDistance(oldX);
+    Integer distance = calculateDistance();
     log.debug("validateDistance() {}", validateDistance(distance));
-    log.debug("validateDirection() {}", validateDirection(oldY));
-    log.debug("validateTilesInBetween() {}", validateTilesInBetween(oldX, oldY, distance));
-    if ((!validateDistance(distance) || !validateDirection(oldY) || !validateTilesInBetween(oldX, oldY, distance))) {
+    log.debug("validateDirection() {}", validateDirection());
+    log.debug("validateTilesInBetween() {}", validateTilesInBetween(distance));
+    if ((!validateDistance(distance) || !validateDirection() || !validateTilesInBetween(distance))) {
       return MoveType.NONE;
     }
     log.debug("distance: {}", distance);
@@ -62,7 +64,7 @@ public class ImprovedLogic implements Logic {
       log.debug("turn: {}", this.turn.toString());
       return MoveType.NORMAL;
     } else if (distance == 2) {
-      Indices indices = findTileInBetween(oldX, oldY, distance);
+      Indices indices = findTileInBetween(distance);
       this.board.get(indices.getX()).set(indices.getY(), LogicTile.EMPTY);
       this.board.get(oldX).set(oldY, LogicTile.EMPTY);
       this.board.get(newX).set(newY, this.oldPiece);
@@ -75,12 +77,12 @@ public class ImprovedLogic implements Logic {
     return this.newX % 2 == this.newY % 2;
   }
 
-  private Boolean isOverlappingMove(Integer oldX, Integer oldY) {
-    return !this.newPiece.isEmpty() || (this.newX.equals(oldX) && this.newY.equals(oldY));
+  private Boolean isOverlappingMove() {
+    return !this.newPiece.isEmpty() || (this.newX.equals(this.oldX) && this.newY.equals(this.oldY));
   }
 
-  private Integer calculateDistance(Integer oldX) {
-    return Math.abs(this.newX - oldX);
+  private Integer calculateDistance() {
+    return Math.abs(this.newX - this.oldX);
   }
 
   private Boolean validateDistance(Integer distance) {
@@ -90,7 +92,7 @@ public class ImprovedLogic implements Logic {
     return distance == 1 || distance == 2;
   }
 
-  private Boolean validateDirection(Integer oldY) {
+  private Boolean validateDirection() {
     if (this.oldPiece.isKing()) {
       return true;
     }
@@ -98,22 +100,22 @@ public class ImprovedLogic implements Logic {
     // if black start from top then this is incorrect
     log.debug("validate direction this.oldPiece {}", this.oldPiece.toString());
     if (this.oldPiece.isBlack()) {
-      return oldY - this.newY < 0;
+      return this.oldY - this.newY < 0;
     }
     if (this.oldPiece.isWhite()) {
-      return oldY - this.newY > 0;
+      return this.oldY - this.newY > 0;
     }
     return false;
   }
 
-  private Boolean validateTilesInBetween(Integer oldX, Integer oldY, Integer distance) {
-    Integer offsetX = Integer.compare(this.newX, oldX);
-    Integer offsetY = Integer.compare(this.newY, oldY);
+  private Boolean validateTilesInBetween(Integer distance) {
+    Integer offsetX = Integer.compare(this.newX, this.oldX);
+    Integer offsetY = Integer.compare(this.newY, this.oldY);
     Integer sum = 0;
     log.debug("offsetX: {} offsetY: {}", offsetX, offsetY);
     // if difference is 2, then I need to take one loop
     for (int i = 1; i < distance; ++i) {
-      LogicTile temp = this.board.get(oldX + i * offsetX).get(oldY + i * offsetY);
+      LogicTile temp = this.board.get(this.oldX + i * offsetX).get(this.oldY + i * offsetY);
       log.debug("compareColors {}", this.turn.compareColors(temp));
       if (this.turn.compareColors(temp)) {
         return false;
@@ -124,16 +126,16 @@ public class ImprovedLogic implements Logic {
     return sum < 2;
   }
 
-  private Indices findTileInBetween(Integer oldX, Integer oldY, Integer distance) {
-    Integer offsetX = Integer.compare(this.newX, oldX);
-    Integer offsetY = Integer.compare(this.newY, oldY);
+  private Indices findTileInBetween(Integer distance) {
+    Integer offsetX = Integer.compare(this.newX, this.oldX);
+    Integer offsetY = Integer.compare(this.newY, this.oldY);
     // if difference is 2, then I need to take one loop
     for (int i = 1; i < distance; ++i) {
-      LogicTile temp = this.board.get(oldX + i * offsetX).get(oldY + i * offsetY);
+      LogicTile temp = this.board.get(this.oldX + i * offsetX).get(this.oldY + i * offsetY);
       if (this.turn.compareColors(temp)) {
         throw new IndicesNotFound("This shouldn't be here inside loop");
       } else if (this.turn.isOppositeColor(temp)) {
-        return new Indices(oldX + i * offsetX, oldY + i * offsetY);
+        return new Indices(this.oldX + i * offsetX, this.oldY + i * offsetY);
       }
     }
     throw new IndicesNotFound("This shouldn't be here");
@@ -143,6 +145,8 @@ public class ImprovedLogic implements Logic {
   LogicTile newPiece;
   Integer newX;
   Integer newY;
+  Integer oldX;
+  Integer oldY;
 
   List<List<LogicTile>> board;
   LogicTile turn;
