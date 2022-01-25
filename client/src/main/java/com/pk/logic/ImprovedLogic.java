@@ -37,6 +37,40 @@ public class ImprovedLogic implements Logic {
     turn = LogicTile.BLACK;
   }
 
+  public MoveType update(Integer newX, Integer newY, Integer oldX, Integer oldY) {
+    this.newPiece = this.board.get(newX).get(newY);
+    this.oldPiece = this.board.get(oldX).get(oldY);
+    this.newX = newX;
+    this.newY = newY;
+    log.debug("isDiagonalMove() {}", isDiagonalMove());
+    log.debug("isOverlappingMove() {}", isOverlappingMove(oldX, oldY));
+    if (Boolean.FALSE.equals(isDiagonalMove()) || Boolean.TRUE.equals(isOverlappingMove(oldX, oldY))) {
+      return MoveType.NONE;
+    }
+    Integer distance = calculateDistance(oldX);
+    log.debug("validateDistance() {}", validateDistance(distance));
+    log.debug("validateDirection() {}", validateDirection(oldY));
+    log.debug("validateTilesInBetween() {}", validateTilesInBetween(oldX, oldY, distance));
+    if ((!validateDistance(distance) || !validateDirection(oldY) || !validateTilesInBetween(oldX, oldY, distance))) {
+      return MoveType.NONE;
+    }
+    log.debug("distance: {}", distance);
+    if (distance == 1) {
+      this.board.get(oldX).set(oldY, LogicTile.EMPTY);
+      this.board.get(newX).set(newY, this.oldPiece);
+      this.turn = this.turn.isWhite() ? LogicTile.BLACK : LogicTile.WHITE;
+      log.debug("turn: {}", this.turn.toString());
+      return MoveType.NORMAL;
+    } else if (distance == 2) {
+      Indices indices = findTileInBetween(oldX, oldY, distance);
+      this.board.get(indices.getX()).set(indices.getY(), LogicTile.EMPTY);
+      this.board.get(oldX).set(oldY, LogicTile.EMPTY);
+      this.board.get(newX).set(newY, this.oldPiece);
+      return MoveType.KILL;
+    }
+    return MoveType.NONE;
+  }
+
   private Boolean isDiagonalMove() {
     return this.newX % 2 == this.newY % 2;
   }
@@ -103,40 +137,6 @@ public class ImprovedLogic implements Logic {
       }
     }
     throw new IndicesNotFound("This shouldn't be here");
-  }
-
-  public MoveType update(Integer newX, Integer newY, Integer oldX, Integer oldY) {
-    this.newPiece = this.board.get(newX).get(newY);
-    this.oldPiece = this.board.get(oldX).get(oldY);
-    this.newX = newX;
-    this.newY = newY;
-    log.debug("isDiagonalMove() {}", isDiagonalMove());
-    log.debug("isOverlappingMove() {}", isOverlappingMove(oldX, oldY));
-    if (Boolean.FALSE.equals(isDiagonalMove()) || Boolean.TRUE.equals(isOverlappingMove(oldX, oldY))) {
-      return MoveType.NONE;
-    }
-    Integer distance = calculateDistance(oldX);
-    log.debug("validateDistance() {}", validateDistance(distance));
-    log.debug("validateDirection() {}", validateDirection(oldY));
-    log.debug("validateTilesInBetween() {}", validateTilesInBetween(oldX, oldY, distance));
-    if ((!validateDistance(distance) || !validateDirection(oldY) || !validateTilesInBetween(oldX, oldY, distance))) {
-      return MoveType.NONE;
-    }
-    log.debug("distance: {}", distance);
-    if (distance == 1) {
-      this.board.get(oldX).set(oldY, LogicTile.EMPTY);
-      this.board.get(newX).set(newY, this.oldPiece);
-      this.turn = this.turn.isWhite() ? LogicTile.BLACK : LogicTile.WHITE;
-      log.debug("turn: {}", this.turn.toString());
-      return MoveType.NORMAL;
-    } else if (distance == 2) {
-      Indices indices = findTileInBetween(oldX, oldY, distance);
-      this.board.get(indices.getX()).set(indices.getY(), LogicTile.EMPTY);
-      this.board.get(oldX).set(oldY, LogicTile.EMPTY);
-      this.board.get(newX).set(newY, this.oldPiece);
-      return MoveType.KILL;
-    }
-    return MoveType.NONE;
   }
 
   LogicTile oldPiece;
