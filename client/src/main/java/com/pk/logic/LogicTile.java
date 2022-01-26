@@ -1,7 +1,7 @@
 package com.pk.logic;
 
 public enum LogicTile {
-  WHITE(1, 0), BLACK(-1, 0), WHITE_PAWN(1, -1), WHITE_KING(1, 1), BLACK_PAWN(-1, -1), BLACK_KING(-1, 1), EMPTY(0, 0);
+  WHITE(-1, 0), BLACK(1, 0), WHITE_PAWN(-1, -1), WHITE_KING(-1, 1), BLACK_PAWN(1, -1), BLACK_KING(1, 1), EMPTY(0, 0);
 
   private LogicTile(Integer color, Integer rank) {
     this.color = color;
@@ -21,11 +21,11 @@ public enum LogicTile {
   }
 
   public Boolean isWhite() {
-    return this.color == 1;
+    return this.color == -1;
   }
 
   public Boolean isBlack() {
-    return this.color == -1;
+    return this.color == 1;
   }
 
   public Boolean isOppositeColor(LogicTile tile) {
@@ -38,6 +38,38 @@ public enum LogicTile {
 
   public Integer getColor() {
     return this.color;
+  }
+
+  public Integer getOppositeColor() {
+    return this.color * -1;
+  }
+
+  public String toSymbol() {
+    switch (this) {
+      case WHITE_KING:
+        return "K";
+      case BLACK_KING:
+        return "R";
+      case WHITE_PAWN:
+        return "W";
+      case BLACK_PAWN:
+        return "B";
+      case EMPTY:
+        return " ";
+      default:
+        return "X";
+    }
+  }
+
+  public LogicTile promote() {
+    switch (this) {
+      case WHITE_PAWN:
+        return WHITE_KING;
+      case BLACK_PAWN:
+        return BLACK_KING;
+      default:
+        return EMPTY;
+    }
   }
 
   private Integer color;
