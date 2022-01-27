@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.channels.SocketChannel;
 import lombok.AllArgsConstructor;
 import lombok.Setter;
@@ -53,21 +54,25 @@ public class SessionHandler implements Runnable {
   }
 
   private boolean trySocket(InputStream in, OutputStream out, byte[] buf) {
-    try {
-      int len = in.read(buf);
-      log.info("Got msg len: {}", len);
-      // Connection closed, send termination msg
-      if (len == 0) {
-        log.info("trySocket failed");
-        out.write("ERROR".getBytes(), 0, "ERROR".length());
+    while (true) {
+      try {
+        int len = in.read(buf);
+        log.info("Got msg len: {}", len);
+        // Connection closed, send termination msg
+        if (len == 0) {
+          log.info("trySocket failed");
+          out.write("ERROR".getBytes(), 0, "ERROR".length());
+          return false;
+        }
+        log.info("Msg: {}", new String(buf, 0, len));
+        out.write(buf, 0, len);
+        return true;
+      } catch (SocketTimeoutException ignore) {
+        log.trace("trySocket timeout");
+      } catch (Exception e) {
+        log.error("trySocket error, {}", e);
         return false;
       }
-      log.info("Msg: {}", new String(buf, 0, len));
-      out.write(buf, 0, len);
-      return true;
-    } catch (Exception e) {
-      log.info("Errors++");
-      return false;
     }
   }
 }
