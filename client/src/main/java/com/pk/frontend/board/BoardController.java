@@ -1,15 +1,21 @@
 package com.pk.frontend.board;
 
 import com.pk.frontend.checkers.*;
+import com.pk.logic.ImprovedLogic;
+import com.pk.logic.Indices;
+import com.pk.logic.Logic;
+import com.pk.logic.exceptions.IllegalArgument;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Group;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Locale;
 import java.util.ResourceBundle;
 
+@Slf4j
 public class BoardController {
   public static final int TILE_SIZE = 100;
   public static final int WIDTH = 8;
@@ -26,9 +32,11 @@ public class BoardController {
   @FXML
   private StackPane stackPane;
 
+  private Logic logic;
 
 
-  public void createContent(ActionEvent actionEvent) {
+  public void createContent(ActionEvent actionEvent) throws IllegalArgument {
+    logic = new ImprovedLogic(HEIGHT, 3);
     Pane root = new Pane();
     root.setPrefSize(WIDTH * TILE_SIZE, HEIGHT * TILE_SIZE);
     root.getChildren().addAll(tileGroup, pieceGroup);
@@ -42,11 +50,11 @@ public class BoardController {
 
         Piece piece = null;
 
-        if (y <= 2 && (x + y) % 2 != 0) {
+        if (y <= 2 && (x + y) % 2 == 0) {
           piece = makePiece(PieceType.BLACK, x, y);
         }
 
-        if (y >= 5 && (x + y) % 2 != 0) {
+        if (y >= 5 && (x + y) % 2 == 0) {
           piece = makePiece(PieceType.WHITE, x, y);
         }
 
@@ -68,14 +76,17 @@ public class BoardController {
 
       MoveResult result;
 
-      if (newX < 0 || newY < 0 || newX >= WIDTH || newY >= HEIGHT) {
-        result = new MoveResult(MoveType.NONE);
-      } else {
-        result = tryMove(piece, newX, newY);
-      }
+//      if (newX < 0 || newY < 0 || newX >= WIDTH || newY >= HEIGHT) {
+//        result = new MoveResult(MoveType.NONE);
+//      } else {
+//        result = tryMove(piece, newX, newY);
+//      }
+
 
       int x0 = toBoard(piece.getOldX());
       int y0 = toBoard(piece.getOldY());
+      result = logic.update(newX, newY, x0, y0);
+      log.info("newX: {} | newY: {} | x0: {} | y0: {}", newX, newY, x0, y0);
 
       switch (result.getType()) {
         case NONE:
@@ -91,9 +102,9 @@ public class BoardController {
           board[x0][y0].setPiece(null);
           board[newX][newY].setPiece(piece);
 
-          Piece otherPiece = result.getPiece();
-          board[toBoard(otherPiece.getOldX())][toBoard(otherPiece.getOldY())].setPiece(null);
-          pieceGroup.getChildren().remove(otherPiece);
+          Indices indices = result.getIndices();
+          board[indices.getX()][indices.getY()].setPiece(null);
+          pieceGroup.getChildren().remove(board[indices.getX()][indices.getY()].getPiece());
           break;
       }
     });
@@ -117,7 +128,7 @@ public class BoardController {
       int y1 = y0 + (newY - y0) / 2;
 
       if (board[x1][y1].hasPiece() && board[x1][y1].getPiece().getType() != piece.getType()) {
-        return new MoveResult(MoveType.KILL, board[x1][y1].getPiece());
+        return new MoveResult(MoveType.KILL, new Indices(x1, y1));
       }
     }
 
