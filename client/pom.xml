@@ -47,6 +47,22 @@
     </dependency>
     <dependency>
       <groupId>org.openjfx</groupId>
+      <artifactId>javafx</artifactId>
+      <version>${javafx.version}</version>
+      <type>pom</type>
+    </dependency>
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-media</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-web</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openjfx</groupId>
       <artifactId>javafx-controls</artifactId>
       <version>${javafx.version}</version>
     </dependency>
