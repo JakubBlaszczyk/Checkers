@@ -1,6 +1,6 @@
 package com.pk.logic;
 
-import com.pk.frontend.checkers.MoveType;
+import com.pk.frontend.checkers.MoveResult;
 
 public interface Logic {
 
@@ -16,10 +16,11 @@ public interface Logic {
    * @param oldY coordinate of pawn before move for Y axis; very important value
    *             that is used in determining direction
    * @return NONE if no move is to be made; MOVE if move is correctly taken; KILL
-   *         if there is need for second pawn to be modified; MANDATORY_KILL if
-   *         only kill move can be made and error is to be shown
+   *         if there is need for second pawn to be modified, it also returns
+   *         indices of piece to be removed; MANDATORY_KILL if only kill move can
+   *         be made and error is to be shown
    */
-  public MoveType update(Integer newX, Integer newY, Integer oldX, Integer oldY);
+  public MoveResult update(Integer newX, Integer newY, Integer oldX, Integer oldY);
 
   /**
    * @return String that is pretty board

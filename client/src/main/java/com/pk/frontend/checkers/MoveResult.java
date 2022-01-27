@@ -1,26 +1,21 @@
 package com.pk.frontend.checkers;
 
+import com.pk.logic.Indices;
 
+import lombok.Value;
+
+@Value
 public class MoveResult {
 
-    private MoveType type;
+  MoveType type;
+  Indices indices;
 
-    public MoveType getType() {
-        return type;
-    }
+  public MoveResult(MoveType type) {
+    this(type, null);
+  }
 
-    private Piece piece;
-
-    public Piece getPiece() {
-        return piece;
-    }
-
-    public MoveResult(MoveType type) {
-        this(type, null);
-    }
-
-    public MoveResult(MoveType type, Piece piece) {
-        this.type = type;
-        this.piece = piece;
-    }
+  public MoveResult(MoveType type, Indices indices) {
+    this.type = type;
+    this.indices = indices;
+  }
 }

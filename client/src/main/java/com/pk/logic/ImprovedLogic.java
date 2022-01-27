@@ -3,6 +3,7 @@ package com.pk.logic;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.pk.frontend.checkers.MoveResult;
 import com.pk.frontend.checkers.MoveType;
 import com.pk.logic.exceptions.IllegalArgument;
 import com.pk.logic.exceptions.IndicesNotFound;
@@ -38,17 +39,22 @@ public class ImprovedLogic implements Logic {
     this.killMove = false;
   }
 
-  public MoveType update(Integer newX, Integer newY, Integer oldX, Integer oldY) {
+  public MoveResult update(Integer newX, Integer newY, Integer oldX, Integer oldY) {
     this.newPiece = this.board.get(newX).get(newY);
     this.oldPiece = this.board.get(oldX).get(oldY);
     this.newX = newX;
     this.newY = newY;
     this.oldX = oldX;
     this.oldY = oldY;
+    log.debug("validateRanges(x) {}", validateRanges(newX), newX);
+    log.debug("validateRanges(y) {}", validateRanges(newY));
+    if (Boolean.FALSE.equals(validateRanges(newX)) && Boolean.FALSE.equals(validateRanges(newY))) {
+      return new MoveResult(MoveType.NONE);
+    }
     log.debug("isDiagonalMove() {}", isDiagonalMove());
     log.debug("isOverlappingMove() {}", isOverlappingMove());
     if (Boolean.FALSE.equals(isDiagonalMove()) || Boolean.TRUE.equals(isOverlappingMove())) {
-      return MoveType.NONE;
+      return new MoveResult(MoveType.NONE);
     }
     Integer distance = calculateDistance();
     log.debug("distance: {}", distance);
@@ -56,18 +62,17 @@ public class ImprovedLogic implements Logic {
     log.debug("validateDirection() {}", validateDirection());
     log.debug("validateTilesInBetween() {}", validateTilesInBetween(distance));
     if ((!validateDistance(distance) || !validateDirection() || !validateTilesInBetween(distance))) {
-      return MoveType.NONE;
+      return new MoveResult(MoveType.NONE);
     }
     log.debug("isKillableAfterMove {}", isKillableAfterMove());
     if (Boolean.TRUE.equals(isNormalMove(distance))) {
       if (Boolean.TRUE.equals(this.killMove)) {
-        return MoveType.MANDATORY_KILL;
+        return new MoveResult(MoveType.MANDATORY_KILL);
       }
       handleNormalMove();
-      return MoveType.NORMAL;
+      return new MoveResult(MoveType.NORMAL);
     } else {
-      handleKillMove(distance);
-      return MoveType.KILL;
+      return new MoveResult(MoveType.KILL, handleKillMove(distance));
     }
   }
 
@@ -177,7 +182,7 @@ public class ImprovedLogic implements Logic {
   }
 
   private Boolean validateRanges(Integer index) {
-    return index > 0 && index < this.board.size();
+    return index >= 0 && index < this.board.size();
   }
 
   private Boolean validateOneTileForOppositeColor(Integer offset, Direction x, Direction y) {
@@ -195,6 +200,7 @@ public class ImprovedLogic implements Logic {
   }
 
   private Boolean isKillableAfterMove() {
+    log.debug("isKillableByKing {}", isKillableByKing());
     return isKillableByPawn() || isKillableByKing();
   }
 
@@ -217,8 +223,17 @@ public class ImprovedLogic implements Logic {
     while (i < this.board.size() && validateOneTileForEmpty(i, x, y)) {
       ++i;
     }
-    return validateOneTileForOppositeColor(i, x, y)
+    return validateOneTileForOppositeColorKing(i, x, y)
         && validateOneTileForEmpty(1, x.getOppositeDirection(), y.getOppositeDirection());
+  }
+
+  private Boolean validateOneTileForOppositeColorKing(Integer offset, Direction x, Direction y) {
+    return (validateRanges(this.newX + (offset * x.getDirection()))
+        && validateRanges(this.newY + (offset * y.getDirection()))
+        && this.board.get(this.newX + (offset * x.getDirection())).get(this.newY + (offset * y.getDirection()))
+            .isOppositeColor(this.oldPiece)
+        && this.board.get(this.newX + (offset * x.getDirection())).get(this.newY + (offset * y.getDirection()))
+            .isKing());
   }
 
   private Boolean canKillAfterKillMove() {
@@ -268,11 +283,12 @@ public class ImprovedLogic implements Logic {
     } else {
       this.board.get(newX).set(newY, this.oldPiece);
     }
-    this.turn = this.turn.isWhite() ? LogicTile.BLACK : LogicTile.WHITE;
     log.debug("turn: {}", this.turn.toString());
+    this.turn = this.turn.isWhite() ? LogicTile.BLACK : LogicTile.WHITE;
+    log.debug("next turn: {}", this.turn.toString());
   }
 
-  private void handleKillMove(Integer distance) {
+  private Indices handleKillMove(Integer distance) {
     this.killMove = canKillAfterKillMove();
     Indices indices = findTileInBetween(distance);
     this.board.get(indices.getX()).set(indices.getY(), LogicTile.EMPTY);
@@ -282,6 +298,7 @@ public class ImprovedLogic implements Logic {
     } else {
       this.board.get(newX).set(newY, this.oldPiece);
     }
+    return indices;
   }
 
   LogicTile oldPiece;
