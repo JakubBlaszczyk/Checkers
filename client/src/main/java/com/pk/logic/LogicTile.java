@@ -72,6 +72,21 @@ public enum LogicTile {
     }
   }
 
+  public LogicTile getOppositeTile() {
+    switch (this) {
+      case WHITE:
+      case WHITE_PAWN:
+      case WHITE_KING:
+        return BLACK;
+      case BLACK:
+      case BLACK_PAWN:
+      case BLACK_KING:
+        return WHITE;
+      default:
+        return EMPTY;
+    }
+  }
+
   private Integer color;
   private Integer rank;
 }

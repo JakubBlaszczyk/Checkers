@@ -41,7 +41,8 @@ public class ImprovedLogic implements Logic {
     }
 
     this.turn = LogicTile.BLACK;
-    this.killMove = false;
+    this.blackKillMove = false;
+    this.whiteKillMove = false;
   }
 
   public MoveResult update(Integer newX, Integer newY, Integer oldX, Integer oldY) {
@@ -53,8 +54,9 @@ public class ImprovedLogic implements Logic {
     this.oldY = oldY;
     log.debug("validateRanges(x) {}", validateRanges(newX), newX);
     log.debug("validateRanges(y) {}", validateRanges(newY));
-    log.debug("validateTurn() {}", validateTurn());
-    if (Boolean.FALSE.equals(validateRanges(newX)) || Boolean.FALSE.equals(validateRanges(newY)) || Boolean.FALSE.equals(validateTurn())) {
+    log.debug("validateTurn() {} actualPiece {}", validateTurn(), this.oldPiece);
+    if (Boolean.FALSE.equals(validateRanges(newX)) || Boolean.FALSE.equals(validateRanges(newY))
+        || Boolean.FALSE.equals(validateTurn())) {
       return new MoveResult(MoveType.NONE);
     }
     log.debug("isDiagonalMove() {}", isDiagonalMove());
@@ -63,23 +65,30 @@ public class ImprovedLogic implements Logic {
       return new MoveResult(MoveType.NONE);
     }
     Integer distance = calculateDistance();
-    log.debug("distance: {}", distance);
+    log.trace("distance: {}", distance);
     log.debug("validateDistance() {}", validateDistance(distance));
     log.debug("validateDirection() {}", validateDirection());
     log.debug("validateTilesInBetween() {}", validateTilesInBetween(distance));
     if ((!validateDistance(distance) || !validateDirection() || !validateTilesInBetween(distance))) {
       return new MoveResult(MoveType.NONE);
     }
-    log.debug("isKillableAfterMove {}", isKillableAfterMove());
+    updateKillMove(checkForKillMoves(this.turn));
     if (Boolean.TRUE.equals(isNormalMove(distance))) {
-      if (Boolean.TRUE.equals(this.killMove)) {
+      if (Boolean.TRUE.equals(isMandatoryKillMove())) {
         return new MoveResult(MoveType.MANDATORY_KILL);
       }
+      checkForKillMoves(this.oldPiece);
       handleNormalMove();
       return new MoveResult(MoveType.NORMAL);
     } else {
       return new MoveResult(MoveType.KILL, handleKillMove(distance));
     }
+  }
+
+  private Boolean isMandatoryKillMove() {
+    log.debug("blackKillMove: {} whiteKillMove: {}", this.blackKillMove, this.whiteKillMove);
+    return (this.turn.isBlack() && this.blackKillMove)
+        || (this.turn.isWhite() && this.whiteKillMove);
   }
 
   @Override
@@ -128,7 +137,7 @@ public class ImprovedLogic implements Logic {
     }
     // it depends on premise that was taken
     // if black start from top then this is incorrect
-    log.debug("validate direction this.oldPiece {}", this.oldPiece.toString());
+    log.trace("validate direction this.oldPiece {}", this.oldPiece.toString());
     log.debug("direction: {}", this.oldY - this.newY);
     if (this.oldPiece.isBlack()) {
       return this.oldY - this.newY < 0;
@@ -143,11 +152,11 @@ public class ImprovedLogic implements Logic {
     Integer offsetX = Integer.compare(this.newX, this.oldX);
     Integer offsetY = Integer.compare(this.newY, this.oldY);
     Integer sum = 0;
-    log.debug("offsetX: {} offsetY: {}", offsetX, offsetY);
+    log.trace("offsetX: {} offsetY: {}", offsetX, offsetY);
     // if difference is 2, then I need to take one loop
     for (int i = 1; i < distance; ++i) {
       LogicTile temp = this.board.get(this.oldX + i * offsetX).get(this.oldY + i * offsetY);
-      log.debug("compareColors {}", this.turn.compareColors(temp));
+      log.trace("compareColors {}", this.turn.compareColors(temp));
       if (this.turn.compareColors(temp)) {
         return false;
       } else if (this.turn.isOppositeColor(temp)) {
@@ -192,84 +201,56 @@ public class ImprovedLogic implements Logic {
   }
 
   private Boolean validateTurn() {
-    return this.board.get(this.oldX).get(this.oldY).compareColors(this.turn);
+    return this.oldPiece.compareColors(this.turn);
   }
 
-  private Boolean validateOneTileForOppositeColor(Integer offset, Direction x, Direction y) {
-    return (validateRanges(this.newX + (offset * x.getDirection()))
-        && validateRanges(this.newY + (offset * y.getDirection()))
-        && this.board.get(this.newX + (offset * x.getDirection())).get(this.newY + (offset * y.getDirection()))
-            .isOppositeColor(this.oldPiece));
+  private Boolean validateOneTileForOppositeColor(Integer x, Integer y, LogicTile piece, Integer offset, Direction dirX,
+      Direction dirY) {
+    log.trace("Opposite Y {} X {} offset {}", (y + (offset * dirY.getDirection())),
+        (x + (offset * dirX.getDirection())), offset);
+    return (validateRanges(x + (offset * dirX.getDirection()))
+        && validateRanges(y + (offset * dirY.getDirection()))
+        && this.board.get(x + (offset * dirX.getDirection())).get(y + (offset * dirY.getDirection()))
+            .isOppositeColor(piece));
   }
 
-  private Boolean validateOneTileForEmpty(Integer offset, Direction x, Direction y) {
-    return (validateRanges(this.newX + (offset * x.getDirection()))
-        && validateRanges(this.newY + (offset * y.getDirection()))
-        && this.board.get(this.newX + (offset * x.getDirection())).get(this.newY + (offset * y.getDirection()))
+  private Boolean validateOneTileForEmpty(Integer x, Integer y, Integer offset, Direction dirX, Direction dirY) {
+    log.trace("Empty Y {} X {} offset {}", (y + (offset * dirY.getDirection())),
+        (x + (offset * dirX.getDirection())), offset);
+    return (validateRanges(x + (offset * dirX.getDirection()))
+        && validateRanges(y + (offset * dirY.getDirection()))
+        && this.board.get(x + (offset * dirX.getDirection())).get(y + (offset * dirY.getDirection()))
             .isEmpty());
   }
 
-  private Boolean isKillableAfterMove() {
-    log.debug("isKillableByKing {}", isKillableByKing());
-    return isKillableByPawn() || isKillableByKing();
+  private Boolean canKill(Integer x, Integer y, LogicTile piece) {
+    log.trace("canKill(x: {}, y: {}, piece: {})", x, y, piece);
+    return piece.isKing() ? canKingKill(x, y, piece) : canPawnKill(x, y, piece);
   }
 
-  private Boolean isKillableByPawn() {
-    return (validateOneTileForOppositeColor(1, Direction.LEFT, Direction.toDirection(this.oldPiece.getColor()))
-        && validateOneTileForEmpty(2, Direction.LEFT, Direction.toDirection(this.oldPiece.getOppositeColor())))
-        || (validateOneTileForOppositeColor(1, Direction.RIGHT, Direction.toDirection(this.oldPiece.getColor()))
-            && validateOneTileForEmpty(2, Direction.RIGHT, Direction.toDirection(this.oldPiece.getOppositeColor())));
+  private Boolean canPawnKill(Integer x, Integer y, LogicTile piece) {
+    return (validateOneTileForOppositeColor(x, y, piece, 1, Direction.LEFT,
+        Direction.toDirection(this.oldPiece.getColor()))
+        && validateOneTileForEmpty(x, y, 2, Direction.LEFT, Direction.toDirection(this.oldPiece.getColor())))
+        || (validateOneTileForOppositeColor(x, y, piece, 1, Direction.RIGHT,
+            Direction.toDirection(this.oldPiece.getColor()))
+            && validateOneTileForEmpty(x, y, 2, Direction.RIGHT, Direction.toDirection(this.oldPiece.getColor())));
   }
 
-  private Boolean isKillableByKing() {
-    return isKillableByKingDeepSearch(Direction.LEFT, Direction.UP)
-        || isKillableByKingDeepSearch(Direction.RIGHT, Direction.UP)
-        || isKillableByKingDeepSearch(Direction.LEFT, Direction.DOWN)
-        || isKillableByKingDeepSearch(Direction.RIGHT, Direction.DOWN);
+  private Boolean canKingKill(Integer x, Integer y, LogicTile piece) {
+    return canKingKillDeepSearch(x, y, piece, Direction.LEFT, Direction.UP) ||
+        canKingKillDeepSearch(x, y, piece, Direction.LEFT, Direction.DOWN) ||
+        canKingKillDeepSearch(x, y, piece, Direction.RIGHT, Direction.DOWN) ||
+        canKingKillDeepSearch(x, y, piece, Direction.RIGHT, Direction.UP);
   }
 
-  private Boolean isKillableByKingDeepSearch(Direction x, Direction y) {
+  private Boolean canKingKillDeepSearch(Integer x, Integer y, LogicTile piece, Direction dirX, Direction dirY) {
     Integer i = 1;
-    while (i < this.board.size() && validateOneTileForEmpty(i, x, y)) {
+    while (i < this.board.size() && validateOneTileForEmpty(x, y, i, dirX, dirY)) {
       ++i;
     }
-    return validateOneTileForOppositeColorKing(i, x, y)
-        && validateOneTileForEmpty(1, x.getOppositeDirection(), y.getOppositeDirection());
-  }
-
-  private Boolean validateOneTileForOppositeColorKing(Integer offset, Direction x, Direction y) {
-    return (validateRanges(this.newX + (offset * x.getDirection()))
-        && validateRanges(this.newY + (offset * y.getDirection()))
-        && this.board.get(this.newX + (offset * x.getDirection())).get(this.newY + (offset * y.getDirection()))
-            .isOppositeColor(this.oldPiece)
-        && this.board.get(this.newX + (offset * x.getDirection())).get(this.newY + (offset * y.getDirection()))
-            .isKing());
-  }
-
-  private Boolean canKillAfterKillMove() {
-    return this.oldPiece.isKing() ? canPawnKillAfterKillMove() : canKingKillAfterKillMove();
-  }
-
-  private Boolean canPawnKillAfterKillMove() {
-    return (validateOneTileForOppositeColor(1, Direction.LEFT, Direction.toDirection(this.oldPiece.getColor()))
-        && validateOneTileForEmpty(2, Direction.LEFT, Direction.toDirection(this.oldPiece.getColor())))
-        || (validateOneTileForOppositeColor(1, Direction.RIGHT, Direction.toDirection(this.oldPiece.getColor()))
-            && validateOneTileForEmpty(2, Direction.RIGHT, Direction.toDirection(this.oldPiece.getColor())));
-  }
-
-  private Boolean canKingKillAfterKillMove() {
-    return canKingKillDeepSearch(Direction.LEFT, Direction.UP) ||
-        canKingKillDeepSearch(Direction.LEFT, Direction.DOWN) ||
-        canKingKillDeepSearch(Direction.RIGHT, Direction.DOWN) ||
-        canKingKillDeepSearch(Direction.RIGHT, Direction.UP);
-  }
-
-  private Boolean canKingKillDeepSearch(Direction x, Direction y) {
-    Integer i = 1;
-    while (i < this.board.size() && validateOneTileForEmpty(i, x, y)) {
-      ++i;
-    }
-    return validateOneTileForOppositeColor(i, x, y) && validateOneTileForEmpty(i + 1, x, y);
+    return validateOneTileForOppositeColor(x, y, piece, i, dirX, dirY)
+        && validateOneTileForEmpty(x, y, i + 1, dirX, dirY);
   }
 
   private Boolean canChangeToKingPiece() {
@@ -286,7 +267,6 @@ public class ImprovedLogic implements Logic {
   }
 
   private void handleNormalMove() {
-    this.killMove = isKillableAfterMove();
     this.board.get(oldX).set(oldY, LogicTile.EMPTY);
     if (Boolean.TRUE.equals(canChangeToKingPiece())) {
       this.board.get(this.newX).set(this.newY, this.oldPiece.promote());
@@ -294,21 +274,58 @@ public class ImprovedLogic implements Logic {
       this.board.get(newX).set(newY, this.oldPiece);
     }
     log.debug("turn: {}", this.turn.toString());
-    this.turn = this.turn.isWhite() ? LogicTile.BLACK : LogicTile.WHITE;
+    updateTurn();
     log.debug("next turn: {}", this.turn.toString());
   }
 
   private Indices handleKillMove(Integer distance) {
-    this.killMove = canKillAfterKillMove();
     Indices indices = findTileInBetween(distance);
     this.board.get(indices.getX()).set(indices.getY(), LogicTile.EMPTY);
     this.board.get(oldX).set(oldY, LogicTile.EMPTY);
     if (Boolean.TRUE.equals(canChangeToKingPiece())) {
       this.board.get(newX).set(newY, this.oldPiece.promote());
+      log.trace("handleKillMove() newX: {} newY: {} oldPiece: {}", newX, newY, this.oldPiece);
+      updateTurn();
+      log.trace("handleKillMove() inKingChange turn: {}", this.turn);
     } else {
       this.board.get(newX).set(newY, this.oldPiece);
+      if (canKill(this.newX, this.newY, this.oldPiece)) {
+        updateKillMove(true);
+      } else {
+        updateTurn();
+        updateKillMove(false);
+      }
     }
+    log.trace("handleKillMove() turn: {}", this.turn);
     return indices;
+  }
+
+  private void updateTurn() {
+    this.turn = this.turn.getOppositeTile();
+  }
+
+  private void updateKillMove(Boolean value) {
+    log.info("updateKillMove: {}", value);
+    if (this.turn.isBlack()) {
+      this.blackKillMove = value;
+    } else if (this.turn.isWhite()) {
+      this.whiteKillMove = value;
+    }
+  }
+
+  private Boolean checkForKillMoves(LogicTile piece) {
+    log.trace("checkForKillMoves(piece: {})", piece);
+    for (int i = 0; i < this.board.size(); ++i) {
+      for (int j = 0; j < this.board.size(); ++j) {
+        LogicTile tile = this.board.get(i).get(j);
+        log.trace("checkForKillMoves() tile: {}", tile);
+        if (!tile.isEmpty() && piece.compareColors(tile) && canKill(i, j, tile)) {
+          log.debug("checkForKillMoves() X: {} Y: {} Tile: {}", i, j, tile);
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   LogicTile oldPiece;
@@ -317,7 +334,8 @@ public class ImprovedLogic implements Logic {
   Integer newY;
   Integer oldX;
   Integer oldY;
-  Boolean killMove;
+  Boolean whiteKillMove;
+  Boolean blackKillMove;
 
   List<List<LogicTile>> board;
   LogicTile turn;
