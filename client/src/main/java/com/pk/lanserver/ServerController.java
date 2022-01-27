@@ -56,5 +56,5 @@ public interface ServerController {
 
   public Future<String> getInviteCode();
 
-  public void cleanup();
+  public void cleanup() throws IOException;
 }
