@@ -216,9 +216,9 @@ public class ImprovedLogic implements Logic {
 
   private Boolean isKillableByPawn() {
     return (validateOneTileForOppositeColor(1, Direction.LEFT, Direction.toDirection(this.oldPiece.getColor()))
-        && validateOneTileForEmpty(1, Direction.LEFT, Direction.toDirection(this.oldPiece.getOppositeColor())))
+        && validateOneTileForEmpty(2, Direction.LEFT, Direction.toDirection(this.oldPiece.getOppositeColor())))
         || (validateOneTileForOppositeColor(1, Direction.RIGHT, Direction.toDirection(this.oldPiece.getColor()))
-            && validateOneTileForEmpty(1, Direction.RIGHT, Direction.toDirection(this.oldPiece.getOppositeColor())));
+            && validateOneTileForEmpty(2, Direction.RIGHT, Direction.toDirection(this.oldPiece.getOppositeColor())));
   }
 
   private Boolean isKillableByKing() {
