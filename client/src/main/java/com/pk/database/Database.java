@@ -15,12 +15,12 @@ import java.util.List;
 public class Database implements DatabaseAccess {
 
   public static final String DRIVER = "org.sqlite.JDBC";
-  public static final String DB_URL = "jdbc:sqlite:./client/target/database.db";
+  public static final String DB_URL = "jdbc:sqlite:./target/";
 
   private Connection conn;
   private Statement stat;
 
-  public Database() throws SQLException {
+  public Database(String dbName) throws SQLException {
     try {
       Class.forName(Database.DRIVER);
     } catch (ClassNotFoundException e) {
@@ -29,7 +29,7 @@ public class Database implements DatabaseAccess {
     }
 
     try {
-      conn = DriverManager.getConnection(DB_URL);
+      conn = DriverManager.getConnection(DB_URL + dbName);
       stat = conn.createStatement();
     } catch (SQLException e) {
       log.error("Connection initialization problem");
@@ -40,7 +40,7 @@ public class Database implements DatabaseAccess {
 
   public boolean createTables() {
     String createGame = "CREATE TABLE IF NOT EXISTS Game (id INTEGER PRIMARY KEY AUTOINCREMENT, player1 varchar(20), player2 varchar(20))";
-    String createMapHistory = "CREATE TABLE IF NOT EXISTS MapHistory (gameId INTEGER, step int(3), stepBefore int(2), stepAfter int(2), PRIMARY KEY (gameID, step) ,FOREIGN KEY(gameID) REFERENCES Game(id))";
+    String createMapHistory = "CREATE TABLE IF NOT EXISTS MapHistory (gameId INTEGER, step int(3), xBefore int(2), yBefore int(2), xAfter int(2), yAfter int(2), PRIMARY KEY (gameID, step) ,FOREIGN KEY(gameID) REFERENCES Game(id))";
     try {
       stat.execute(createGame);
 
@@ -67,16 +67,20 @@ public class Database implements DatabaseAccess {
     return true;
   }
 
-  public boolean insertIntoMapHistory(int gameId, int step, int stepBefore, int stepAfter) {
+  public boolean insertIntoMapHistory(int gameId, int xBefore, int yBefore, int xAfter, int yAfter) {
+    int step = selectStepFromMapHistory(gameId);
+    log.debug("{}", step);
     try {
-      PreparedStatement prepStmt = conn.prepareStatement("insert into MapHistory values (?, ?, ?, ?);");
-      prepStmt.setInt(0, gameId);
-      prepStmt.setInt(1, step);
-      prepStmt.setInt(2, stepBefore);
-      prepStmt.setInt(3, stepAfter);
+      PreparedStatement prepStmt = conn.prepareStatement("insert into MapHistory values (?, ?, ?, ?, ?, ?)");
+      prepStmt.setInt(1, gameId);
+      prepStmt.setInt(2, step);
+      prepStmt.setInt(3, xBefore);
+      prepStmt.setInt(4, yBefore);
+      prepStmt.setInt(5, xAfter);
+      prepStmt.setInt(6, yAfter);
       prepStmt.execute();
     } catch (SQLException e) {
-      System.err.println("Insert MapHistory error");
+      System.err.println("Insert MapHistory error: Something is wrong my friend");
       e.printStackTrace();
       return false;
     }
@@ -102,17 +106,34 @@ public class Database implements DatabaseAccess {
     return game;
   }
 
-  public List<MapHistory> selectFromMapHistory() {
+  public int selectStepFromMapHistory(int gameId) {
+    int step = 0;
+    try {
+      ResultSet result = stat.executeQuery("SELECT step FROM MapHistory WHERE gameId = " + gameId + " ORDER BY step DESC limit 1");
+      while (result.next()) {
+        step = result.getInt("step");
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+      return 1;
+    }
+    return step + 1;
+  }
+
+  public List<MapHistory> selectFromMapHistory(int gameId) {
     List<MapHistory> mapHistory = new LinkedList<>();
     try {
-      ResultSet result = stat.executeQuery("SELECT * FROM MapHistory");
-      int id, step, stepBefore, stepAfter;
+      ResultSet result = stat.executeQuery("SELECT * FROM MapHistory WHERE gameId = " + gameId);
+      int id, step, xBefore, yBefore, xAfter, yAfter;
       while (result.next()) {
         id = result.getInt("gameId");
         step = result.getInt("step");
-        stepBefore = result.getInt("stepBefore");
-        stepAfter = result.getInt("stepAfter");
-        mapHistory.add(new MapHistory(id, step, stepBefore, stepAfter));
+        gameId = result.getInt("gameId");
+        xBefore = result.getInt("xBefore");
+        yBefore = result.getInt("yBefore");
+        xAfter = result.getInt("xAfter");
+        yAfter = result.getInt("yAfter");
+        mapHistory.add(new MapHistory(id, gameId, step, xBefore, yBefore, xAfter, yAfter));
       }
     } catch (SQLException e) {
       e.printStackTrace();
@@ -125,7 +146,7 @@ public class Database implements DatabaseAccess {
     try {
       conn.close();
     } catch (SQLException e) {
-      System.err.println("Close connection error");
+      System.err.println("Close connection error: Its still open bro");
       e.printStackTrace();
     }
   }
