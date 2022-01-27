@@ -53,7 +53,8 @@ public class ImprovedLogic implements Logic {
     this.oldY = oldY;
     log.debug("validateRanges(x) {}", validateRanges(newX), newX);
     log.debug("validateRanges(y) {}", validateRanges(newY));
-    if (Boolean.FALSE.equals(validateRanges(newX)) && Boolean.FALSE.equals(validateRanges(newY))) {
+    log.debug("validateTurn() {}", validateTurn());
+    if (Boolean.FALSE.equals(validateRanges(newX)) && Boolean.FALSE.equals(validateRanges(newY)) && Boolean.FALSE.equals(validateTurn())) {
       return new MoveResult(MoveType.NONE);
     }
     log.debug("isDiagonalMove() {}", isDiagonalMove());
@@ -188,6 +189,10 @@ public class ImprovedLogic implements Logic {
 
   private Boolean validateRanges(Integer index) {
     return index >= 0 && index < this.board.size();
+  }
+
+  private Boolean validateTurn() {
+    return this.board.get(this.newX).get(this.newY).compareColors(this.turn);
   }
 
   private Boolean validateOneTileForOppositeColor(Integer offset, Direction x, Direction y) {
