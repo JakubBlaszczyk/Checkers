@@ -28,6 +28,8 @@ public class ImprovedLogicTest {
       log.debug("\n{}", logic.toString());
       log.debug("NONE");
       assertEquals(new MoveResult(MoveType.NONE).getType(), logic.update(2, 2, 1, 1).getType());
+      log.debug("NONE");
+      assertEquals(new MoveResult(MoveType.NONE).getType(), logic.update(3, 3, 2, 2).getType());
       log.debug("NORMAL {}", logic.getTurn().toString());
       assertEquals(new MoveResult(MoveType.NORMAL).getType(), logic.update(5, 5, 6, 6).getType());
       log.debug("NORMAL {}", logic.getTurn().toString());
