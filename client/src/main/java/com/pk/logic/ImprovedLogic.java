@@ -38,6 +38,7 @@ public class ImprovedLogic implements Logic {
           this.board.get(i).set(size - (row + 1), LogicTile.WHITE_PAWN);
         }
       }
+    }
 
     this.turn = LogicTile.BLACK;
     this.killMove = false;
