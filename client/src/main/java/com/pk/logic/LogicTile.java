@@ -64,7 +64,9 @@ public enum LogicTile {
   public LogicTile promote() {
     switch (this) {
       case WHITE_PAWN:
+      case WHITE_KING:
         return WHITE_KING;
+      case BLACK_KING:
       case BLACK_PAWN:
         return BLACK_KING;
       default:
