@@ -34,7 +34,7 @@ public class App extends Application {
       locale = new Locale("pl_PL");
       translations = ResourceBundle.getBundle("translations", locale);
       Parent root = FXMLLoader.load(App.class.getClassLoader().getResource("BoardView.fxml"), translations);
-      stage.setScene(new Scene(root, 800, 800));
+      stage.setScene(new Scene(root, 800, 825));
       stage.show();
     }
 
