@@ -17,7 +17,7 @@ public class ImprovedLogicTest {
   @Test
   public void checkBoardNormalMove() {
     try {
-      ImprovedLogic logic = new ImprovedLogic(8);
+      ImprovedLogic logic = new ImprovedLogic(8, 2);
       log.debug("NONE");
       assertEquals(new MoveResult(MoveType.NONE).getType(), logic.update(0, 0, 1, 1).getType());
       log.debug("\n{}", logic.toString());

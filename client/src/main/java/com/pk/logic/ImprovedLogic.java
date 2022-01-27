@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ImprovedLogic implements Logic {
 
-  public ImprovedLogic(Integer size) throws IllegalArgument {
+  public ImprovedLogic(Integer size, Integer rowNum) throws IllegalArgument {
     if (!(size % 2 == 0 && size > 6)) {
       throw new IllegalArgument();
     }
@@ -28,11 +28,17 @@ public class ImprovedLogic implements Logic {
     }
 
     // initialize black and white pawns
-    for (int i = 0, j = 1; i < size; i = i + 2, j = j + 2) {
-      this.board.get(i).set(0, LogicTile.BLACK_PAWN);
-      this.board.get(j).set(1, LogicTile.BLACK_PAWN);
-      this.board.get(i).set(size - 2, LogicTile.WHITE_PAWN);
-      this.board.get(j).set(size - 1, LogicTile.WHITE_PAWN);
+    for (int row = 0; row < rowNum; ++row) {
+      for (int i = 0, j = 1; i < size; i = i + 2, j = j + 2) {
+        if (row % 2 == 0) {
+          this.board.get(i).set(row, LogicTile.BLACK_PAWN);
+          this.board.get(j).set(size - (row + 1), LogicTile.WHITE_PAWN);
+        } else {
+          this.board.get(j).set(row, LogicTile.BLACK_PAWN);
+          this.board.get(i).set(size - (row + 1), LogicTile.WHITE_PAWN);
+        }
+      }
+
     }
 
     this.turn = LogicTile.BLACK;
