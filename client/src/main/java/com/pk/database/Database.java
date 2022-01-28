@@ -15,7 +15,7 @@ import java.util.List;
 public class Database implements DatabaseAccess {
 
   public static final String DRIVER = "org.sqlite.JDBC";
-  public static final String DB_URL = "jdbc:sqlite:./target/";
+  public static final String DB_URL = "jdbc:sqlite:./";
 
   private Connection conn;
   private Statement stat;
@@ -53,18 +53,22 @@ public class Database implements DatabaseAccess {
     return true;
   }
 
-  public boolean insertIntoGame(String player1, String player2) {
+  public int insertIntoGame(String player1, String player2) {
     try {
       PreparedStatement prepStmt = conn.prepareStatement("insert into Game values (NULL, ?, ?);");
       prepStmt.setString(1, player1);
       prepStmt.setString(2, player2);
       prepStmt.execute();
+      try (ResultSet key = prepStmt.getGeneratedKeys()) {
+        if (key.next()) {
+          return key.getInt(1);
+        }
+      }
     } catch (SQLException e) {
       System.err.println("Insert Game error");
       e.printStackTrace();
-      return false;
     }
-    return true;
+    return -1;
   }
 
   public boolean insertIntoMapHistory(int gameId, int xBefore, int yBefore, int xAfter, int yAfter) {

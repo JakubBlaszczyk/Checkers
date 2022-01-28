@@ -12,4 +12,9 @@ public class MapHistory {
   int yBefore;
   int xAfter;
   int yAfter;
+
+  @Override
+  public String toString() {
+    return "Step " + step + ": [" + xBefore + ", " + yBefore + "] => [" + xAfter + ", " + yAfter + "]";
+  }
 }
