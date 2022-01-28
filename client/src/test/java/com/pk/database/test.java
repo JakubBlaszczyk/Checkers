@@ -32,8 +32,10 @@ public class test {
 
   @Test
   public void createGameRecord() {
-    b.insertIntoGame("Arek", "Daniel");
-    b.insertIntoGame("Jan", "Jakub");
+    int index = b.insertIntoGame("Arek", "Daniel");
+    System.out.println("New index: " + index);
+    index = b.insertIntoGame("Jan", "Jakub");
+    System.out.println("New index2: " + index);
 
     List<Game> matches = b.selectFromGame();
 

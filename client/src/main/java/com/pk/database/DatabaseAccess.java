@@ -4,7 +4,7 @@ import java.util.List;
 
 public interface DatabaseAccess {
 
-  public boolean insertIntoGame(String player1, String player2);
+  public int insertIntoGame(String player1, String player2);
 
   public boolean insertIntoMapHistory(int gameId, int xBefore, int yBefore, int xAfter, int yAfter);
 
