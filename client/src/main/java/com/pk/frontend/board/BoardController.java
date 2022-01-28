@@ -7,11 +7,24 @@ import com.pk.logic.Logic;
 import com.pk.logic.exceptions.IllegalArgument;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Group;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -31,9 +44,38 @@ public class BoardController {
 
   @FXML
   private StackPane stackPane;
+  @FXML
+  private Menu game;
+  @FXML
+  private MenuItem returnToMenu;
+  @FXML
+  private MenuItem leaveGame;
+  @FXML
+  private Menu help;
+  @FXML
+  private MenuItem rules;
+  @FXML
+  private MenuItem creators;
+  @FXML
+  private Menu language;
+  @FXML
+  private MenuItem polish;
+  @FXML
+  private MenuItem english;
+  @FXML
+  private Button startButton;
+  @FXML
+  private Label whiteWin;
+  @FXML
+  private Label blackWin;
 
   private Logic logic;
 
+  @FXML
+  public void initialize(){
+    blackWin.setVisible(false);
+    whiteWin.setVisible(false);
+  }
 
   public void createContent(ActionEvent actionEvent) throws IllegalArgument {
     logic = new ImprovedLogic(HEIGHT, 3);
@@ -76,17 +118,11 @@ public class BoardController {
 
       MoveResult result;
 
-//      if (newX < 0 || newY < 0 || newX >= WIDTH || newY >= HEIGHT) {
-//        result = new MoveResult(MoveType.NONE);
-//      } else {
-//        result = tryMove(piece, newX, newY);
-//      }
-
-
       int x0 = toBoard(piece.getOldX());
       int y0 = toBoard(piece.getOldY());
       result = logic.update(newX, newY, x0, y0);
       log.info("newX: {} | newY: {} | x0: {} | y0: {}", newX, newY, x0, y0);
+      log.info("{}", logic.toString());
 
       switch (result.getType()) {
         case NONE:
@@ -103,48 +139,109 @@ public class BoardController {
           board[newX][newY].setPiece(piece);
 
           Indices indices = result.getIndices();
-          board[indices.getX()][indices.getY()].setPiece(null);
+          log.info("indiX: {} | indiY: {}", indices.getX(), indices.getY());
+          log.info("board: ", board[indices.getX()][indices.getY()].getPiece());
           pieceGroup.getChildren().remove(board[indices.getX()][indices.getY()].getPiece());
+          board[indices.getX()][indices.getY()].setPiece(null);
           break;
+        case MANDATORY_KILL:
+          piece.abortMove();
+          break;
+      }
+
+      Integer blackPieces = 0;
+      Integer whitePieces = 0;
+
+      for(Tile[] row : board){
+        for(Tile tile : row){
+          if(tile != null && tile.hasPiece() && tile.getPiece().getType().equals(PieceType.BLACK)){
+            blackPieces++;
+          }
+          else if(tile != null && tile.hasPiece() && tile.getPiece().getType().equals(PieceType.WHITE)){
+            whitePieces++;
+          }
+        }
+      }
+
+      if(blackPieces.equals(0)){
+        log.info("GAME OVER - White wins");
+        stackPane.getChildren().clear();
+        stackPane.getChildren().add(whiteWin);
+        stackPane.getChildren().add(startButton);
+        whiteWin.setVisible(true);
+      }
+      else if(whitePieces.equals(0)){
+        log.info("GAME OVER - Black wins");
+        stackPane.getChildren().clear();
+        stackPane.getChildren().add(blackWin);
+        stackPane.getChildren().add(startButton);
+        blackWin.setVisible(true);
       }
     });
 
+
     return piece;
-  }
-
-  private MoveResult tryMove(Piece piece, int newX, int newY) {
-    if (board[newX][newY].hasPiece() || (newX + newY) % 2 == 0) {
-      return new MoveResult(MoveType.NONE);
-    }
-
-    int x0 = toBoard(piece.getOldX());
-    int y0 = toBoard(piece.getOldY());
-
-    if (Math.abs(newX - x0) == 1 && newY - y0 == piece.getType().moveDir) {
-      return new MoveResult(MoveType.NORMAL);
-    } else if (Math.abs(newX - x0) == 2 && newY - y0 == piece.getType().moveDir * 2) {
-
-      int x1 = x0 + (newX - x0) / 2;
-      int y1 = y0 + (newY - y0) / 2;
-
-      if (board[x1][y1].hasPiece() && board[x1][y1].getPiece().getType() != piece.getType()) {
-        return new MoveResult(MoveType.KILL, new Indices(x1, y1));
-      }
-    }
-
-    return new MoveResult(MoveType.NONE);
   }
 
   private int toBoard(double pixel) {
     return (int)(pixel + TILE_SIZE / 2) / TILE_SIZE;
   }
 
-  public void showCreators(ActionEvent actionEvent) {
+  public void switchLanguageToEnglish(){
+    setLanguage("en_US");
   }
 
-  public void switchLanguageToPolish(ActionEvent actionEvent) {
+  public void switchLanguageToPolish(){
+    setLanguage("pl_PL");
   }
 
-  public void switchLanguageToEnglish(ActionEvent actionEvent) {
+  private void setLanguage(String lang){
+    locale = new Locale(lang);
+    bundle = ResourceBundle.getBundle("translations", locale);
+    game.setText(bundle.getString("game"));
+    returnToMenu.setText(bundle.getString("returnToMenu"));
+    leaveGame.setText(bundle.getString("leaveGame"));
+    help.setText(bundle.getString("help"));
+    rules.setText(bundle.getString("rules"));
+    creators.setText(bundle.getString("creators"));
+    language.setText(bundle.getString("language"));
+    polish.setText(bundle.getString("polish"));
+    english.setText(bundle.getString("english"));
+    whiteWin.setText(bundle.getString("whiteWin"));
+    blackWin.setText(bundle.getString("blackWin"));
+  }
+
+  public void showCreators() throws IOException {
+    Stage stage = new Stage();
+    Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("CreatorsView.fxml"));
+    stage.setScene(new Scene(root,600,400));
+    stage.getIcons().add(new Image("https://i.ibb.co/yNH0t4d/icon.png"));
+    stage.show();
+  }
+
+  public void showRules() throws IOException {
+    Stage stage = new Stage();
+    Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("RulesView.fxml"));
+    stage.setScene(new Scene(root,800,600));
+    stage.getIcons().add(new Image("https://i.ibb.co/yNH0t4d/icon.png"));
+    stage.show();
+  }
+
+  public void closeWindow(){
+    Stage stage = (Stage) startButton.getScene().getWindow();
+    stage.close();
+  }
+
+  public void showMenu() throws IOException {
+    Stage oldStage = (Stage) startButton.getScene().getWindow();
+    Stage stage = new Stage();
+    locale = new Locale("pl_PL");
+    bundle = ResourceBundle.getBundle("translations", locale);
+    Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("MainMenuView.fxml"), bundle);
+    stage.setTitle("Checkers");
+    stage.getIcons().add(new Image("https://i.ibb.co/yNH0t4d/icon.png"));
+    stage.setScene(new Scene(root, 800, 800));
+    oldStage.close();
+    stage.show();
   }
 }

@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -26,6 +27,7 @@ public class App extends Application {
       translations = ResourceBundle.getBundle("translations", locale);
       Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("MainMenuView.fxml"), translations);
       primaryStage.setTitle("Checkers");
+      primaryStage.getIcons().add(new Image("https://i.ibb.co/yNH0t4d/icon.png"));
       primaryStage.setScene(new Scene(root, 800, 800));
       primaryStage.show();
     }
@@ -34,6 +36,7 @@ public class App extends Application {
       locale = new Locale("pl_PL");
       translations = ResourceBundle.getBundle("translations", locale);
       Parent root = FXMLLoader.load(App.class.getClassLoader().getResource("BoardView.fxml"), translations);
+      stage.getIcons().add(new Image("https://i.ibb.co/yNH0t4d/icon.png"));
       stage.setScene(new Scene(root, 800, 825));
       stage.show();
     }
