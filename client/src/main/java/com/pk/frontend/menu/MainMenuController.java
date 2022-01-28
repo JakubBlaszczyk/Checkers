@@ -57,9 +57,39 @@ public class MainMenuController {
     private Button exit;
     @FXML
     private StackPane stackPane;
+    @FXML
+    private Button joinGame;
+    @FXML
+    private Button newGame;
+    @FXML
+    private Label insertCode;
+    @FXML
+    private TextField codeInput;
+    @FXML
+    private Button join;
+    @FXML
+    private Label insertIP;
+    @FXML
+    private TextField localIP;
+    @FXML
+    private Button generateCode;
+    @FXML
+    private TextField inviteCode;
 
     private BoardController boardController = new BoardController();
 
+    @FXML
+    public void initialize(){
+        joinGame.setVisible(false);
+        newGame.setVisible(false);
+        insertCode.setVisible(false);
+        codeInput.setVisible(false);
+        join.setVisible(false);
+        localIP.setVisible(false);
+        insertIP.setVisible(false);
+        generateCode.setVisible(false);
+        inviteCode.setVisible(false);
+    }
 
     public void switchLanguageToEnglish(){
         setLanguage("en_US");
@@ -84,6 +114,12 @@ public class MainMenuController {
         hotseat.setText(bundle.getString("hotseat"));
         multiplayer.setText(bundle.getString("multiplayer"));
         exit.setText(bundle.getString("exit"));
+        joinGame.setText(bundle.getString("joinGame"));
+        newGame.setText(bundle.getString("createGame"));
+        insertCode.setText(bundle.getString("insertCode"));
+        join.setText(bundle.getString("joinGame"));
+        insertIP.setText(bundle.getString("insertIP"));
+        generateCode.setText(bundle.getString("generateCode"));
     }
 
     public void showCreators() throws IOException {
@@ -98,27 +134,70 @@ public class MainMenuController {
         hotseat.setVisible(false);
         multiplayer.setVisible(false);
         exit.setVisible(false);
-        ListView<String> gamesList = new ListView<String>();
-        ArrayList<String> lista = new ArrayList<String>();
-        lista.add("gra1");
-        lista.add("gra2");
-        ObservableList<String> observableList = FXCollections.observableList(lista);
-        gamesList.setItems(observableList);
-        gamesList.setPrefSize(600,600);
-        gamesList.setMaxSize(600,600);
-        gamesList.setMinSize(600,600);
-        TilePane tilePane = new TilePane(gamesList);
-        tilePane.setPrefSize(600,600);
-        tilePane.setMaxSize(600,600);
-        tilePane.setMinSize(600,600);
-        stackPane.getChildren().add(tilePane);
-
+        joinGame.setVisible(true);
+        newGame.setVisible(true);
     }
 
     public void showBoard(ActionEvent actionEvent) throws IOException {
-      hotseat.setVisible(false);
-      multiplayer.setVisible(false);
-      exit.setVisible(false);
-      App.showBoardScene();
+        Stage oldStage = (Stage) exit.getScene().getWindow();
+        Stage stage = new Stage();
+        locale = new Locale("pl_PL");
+        bundle = ResourceBundle.getBundle("translations", locale);
+        Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("BoardView.fxml"), bundle);
+        stage.getIcons().add(new Image("https://i.ibb.co/yNH0t4d/icon.png"));
+        stage.setScene(new Scene(root, 800, 825));
+        oldStage.close();
+        stage.show();
+    }
+
+    public void showRules() throws IOException {
+        Stage stage = new Stage();
+        Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("RulesView.fxml"));
+        stage.setScene(new Scene(root,800,600));
+        stage.getIcons().add(new Image("https://i.ibb.co/yNH0t4d/icon.png"));
+        stage.show();
+    }
+
+    public void closeWindow(){
+        Stage stage = (Stage) exit.getScene().getWindow();
+        stage.close();
+    }
+
+    public void showMenu() throws IOException {
+        Stage oldStage = (Stage) exit.getScene().getWindow();
+        Stage stage = new Stage();
+        locale = new Locale("pl_PL");
+        bundle = ResourceBundle.getBundle("translations", locale);
+        Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("MainMenuView.fxml"), bundle);
+        stage.setTitle("Checkers");
+        stage.getIcons().add(new Image("https://i.ibb.co/yNH0t4d/icon.png"));
+        stage.setScene(new Scene(root, 800, 800));
+        oldStage.close();
+        stage.show();
+    }
+
+    public void createGame(){
+        newGame.setVisible(false);
+        joinGame.setVisible(false);
+        insertIP.setVisible(true);
+        localIP.setVisible(true);
+        generateCode.setVisible(true);
+    }
+
+    public void generateCode(){
+        inviteCode.setText("KOD ARKADIUSZA");
+        inviteCode.setVisible(true);
+    }
+
+    public void joinToGame(){
+        newGame.setVisible(false);
+        joinGame.setVisible(false);
+        codeInput.setVisible(true);
+        insertCode.setVisible(true);
+        join.setVisible(true);
+    }
+
+    public void showHistory(){
+
     }
 }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1">
+    <center>
+        <Label alignment="CENTER" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="600.0" prefWidth="800.0" style="-fx-background-color: #F2F0C9;" text="Jako pierwszy ruch wykonuje grający pionami czarnymi, po czym gracze wykonują na &#10;zmianę kolejne ruchy.&#10;Celem gry jest zbicie wszystkich pionów przeciwnika.&#10;Piony mogą poruszać się o jedno pole do przodu po przekątnej (na ukos) na wolne pola.&#10;Bicie pionem następuje przez przeskoczenie sąsiedniego pionu przeciwnika na pole &#10;znajdujące się tuż za nim po przekątnej (pole to musi być wolne). Zbite piony są &#10;usuwane z planszy po zakończeniu ruchu.&#10;W jednym ruchu wolno wykonać więcej niż jedno bicie tym samym pionem, &#10;przeskakując przez kolejne piony przeciwnika.&#10;Bicia są obowiązkowe.&#10;Pion, który dojdzie do ostatniego rzędu planszy, staje się damką.&#10;Damki mogą poruszać się w jednym ruchu o dowolną liczbę pól do przodu lub do tyłu &#10;po przekątnej, zatrzymując się na wolnych polach.&#10;Bicie damką jest możliwe z dowolnej odległości po linii przekątnej i następuje przez &#10;przeskoczenie pionu przeciwnika, za którym musi znajdować się co najmniej jedno &#10;wolne pole - damka przeskakuje na dowolne z tych pól i może kontynuować bicie (na &#10;tej samej lub prostopadłej linii).&#10;Podczas bicia nie można przeskakiwać więcej niż raz przez ten sam pion." textAlignment="CENTER" textFill="#323232" BorderPane.alignment="CENTER">
+            <font>
+                <Font name="Century Gothic" size="18.0" />
+            </font>
+        </Label>
+    </center>
+</BorderPane>
