@@ -46,7 +46,7 @@
                   <Font name="Century Gothic Bold" size="36.0" />
                </font>
                <StackPane.margin>
-                  <Insets top="100.0" />
+                  <Insets top="300.0" />
                </StackPane.margin></Button>
             <Button fx:id="joinGame" layoutX="306.0" layoutY="100.0" mnemonicParsing="false" onAction="#joinToGame" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%joinGame">
                <font>
@@ -119,6 +119,14 @@
                   <Insets top="350.0" />
                </StackPane.margin>
             </TextField>
+            <Button fx:id="history" layoutX="339.0" layoutY="413.0" mnemonicParsing="false" onAction="#showHistory" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%history">
+               <font>
+                  <Font name="Century Gothic Bold" size="36.0" />
+               </font>
+               <StackPane.margin>
+                  <Insets top="100.0" />
+               </StackPane.margin>
+            </Button>
          </children>
       </StackPane>
    </center>

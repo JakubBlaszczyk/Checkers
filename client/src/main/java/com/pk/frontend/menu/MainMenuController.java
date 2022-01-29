@@ -1,31 +1,33 @@
 package com.pk.frontend.menu;
 
 
-import com.pk.App;
+import com.pk.database.Database;
+import com.pk.database.Game;
+import com.pk.database.MapHistory;
 import com.pk.frontend.board.BoardController;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.css.converter.ColorConverter;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.ResourceBundle;
+import java.sql.SQLException;
+import java.util.*;
 
 /**
  * Used to handle GUI operations
  */
+@Slf4j
 public class MainMenuController {
 
     Locale locale;
@@ -75,6 +77,10 @@ public class MainMenuController {
     private Button generateCode;
     @FXML
     private TextField inviteCode;
+    @FXML
+    private Button history;
+
+    private Database database;
 
     private BoardController boardController = new BoardController();
 
@@ -120,6 +126,7 @@ public class MainMenuController {
         join.setText(bundle.getString("joinGame"));
         insertIP.setText(bundle.getString("insertIP"));
         generateCode.setText(bundle.getString("generateCode"));
+        history.setText(bundle.getString("history"));
     }
 
     public void showCreators() throws IOException {
@@ -133,6 +140,7 @@ public class MainMenuController {
     public void showLobby(ActionEvent actionEvent){
         hotseat.setVisible(false);
         multiplayer.setVisible(false);
+        history.setVisible(false);
         exit.setVisible(false);
         joinGame.setVisible(true);
         newGame.setVisible(true);
@@ -197,7 +205,55 @@ public class MainMenuController {
         join.setVisible(true);
     }
 
-    public void showHistory(){
+    public void showHistory() throws SQLException {
+        hotseat.setVisible(false);
+        multiplayer.setVisible(false);
+        history.setVisible(false);
+        exit.setVisible(false);
 
+        database = new Database("CheckersDatabase.db");
+        List<Game> game = database.selectFromGame();
+        ListView<String> gamesList = new ListView<>();
+        ArrayList<String> lista = new ArrayList<>();
+        for(Game oneGame : game){
+            lista.add(oneGame.toString());
+        }
+        ObservableList<String> observableList = FXCollections.observableList(lista);
+        gamesList.setItems(observableList);
+        gamesList.setPrefSize(600,600);
+        gamesList.setMaxSize(600,600);
+        gamesList.setMinSize(600,600);
+        TilePane tilePane = new TilePane(gamesList);
+        tilePane.setPrefSize(600,600);
+        tilePane.setMaxSize(600,600);
+        tilePane.setMinSize(600,600);
+        gamesList.setOnMouseClicked(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent mouseEvent) {
+                String gameRow = gamesList.getSelectionModel().getSelectedItem();
+                showMoves(Integer.parseInt(gameRow.substring(8, gameRow.indexOf(","))), tilePane);
+            }
+        });
+        stackPane.getChildren().add(tilePane);
+    }
+
+    public void showMoves(int gameId, TilePane tilePane){
+        stackPane.getChildren().remove(tilePane);
+        List<MapHistory> mapHistoryList = database.selectFromMapHistory(gameId);
+        ListView<String> movesList = new ListView<>();
+        ArrayList<String> list = new ArrayList<>();
+        for(MapHistory mapHistory : mapHistoryList){
+            list.add(mapHistory.toString());
+        }
+        ObservableList<String> observableList = FXCollections.observableList(list);
+        movesList.setItems(observableList);
+        movesList.setPrefSize(600,600);
+        movesList.setMaxSize(600,600);
+        movesList.setMinSize(600,600);
+        TilePane movesTilePane = new TilePane(movesList);
+        movesTilePane.setPrefSize(600,600);
+        movesTilePane.setMaxSize(600,600);
+        movesTilePane.setMinSize(600,600);
+        stackPane.getChildren().add(movesTilePane);
     }
 }

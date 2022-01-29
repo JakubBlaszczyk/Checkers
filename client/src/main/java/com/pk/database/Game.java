@@ -10,6 +10,6 @@ public class Game {
 
   @Override
   public String toString() {
-    return "Game(idd=" + id + ", player1=" + player1 + ", player2=" + player2 + ")";
+    return "Game(id=" + id + ", player1=" + player1 + ", player2=" + player2 + ")";
   }
 }
