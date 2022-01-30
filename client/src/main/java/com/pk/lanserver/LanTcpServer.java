@@ -10,7 +10,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -153,7 +152,10 @@ public class LanTcpServer implements LocalTcpServer {
     return Arrays.asList(msg.split("!"));
   }
 
-  private InetAddress inviteCodeToIp(String inv) throws UnknownHostException {
+  private InetAddress inviteCodeToIp(String inv) throws IOException {
+    if (inv.length() != 12) {
+      throw new IOException("Invalid invite code provided");
+    }
     return InetAddress.getByName(
         String.valueOf(Integer.parseInt(inv.substring(0, 3)))
             + "."
@@ -170,7 +172,7 @@ public class LanTcpServer implements LocalTcpServer {
     SocketChannel scNew = SocketChannel.open();
     scNew.configureBlocking(true);
     log.info("Connect ret: {}", scNew.connect(sockaddr));
-    scNew.write(ByteBuffer.wrap(String.format("checkers:invitationAsk %s %s %s", nick, profileImg, inviteCode).getBytes()));
+    scNew.write(ByteBuffer.wrap(String.format("checkers:invitationAsk %s %s %s", nick, profileImg, ipToInvCode(localIp)).getBytes()));
     scNew.configureBlocking(false);
     selector.wakeup();
     scNew.register(selector, SelectionKey.OP_READ);
@@ -192,6 +194,9 @@ public class LanTcpServer implements LocalTcpServer {
 
   public boolean acceptInvitation(String inviteCode) throws IOException {
     Connection conn = mapInvToConn.get(inviteCode);
+    if (conn == null) {
+      throw new IOException("No such invite found");
+    }
     SocketChannel sc = conn.getSc();
     remoteChannel = sc;
     if (!remoteChannel.isConnected()) {
@@ -233,6 +238,10 @@ public class LanTcpServer implements LocalTcpServer {
       for (String item : items) {
         log.info(item);
       }
+      // if (!items[2].equals(ipToInvCode(localIp))) {
+      //   log.warn("Got invitation for another machine");
+      //   return false;
+      // }
       Invite invite = new Invite(items[0], items[1], null, items[2]);
       mapInvToConn.put(items[2], new Connection(key, sc));
       log.info("Adding: " + invite.toString());
@@ -245,12 +254,12 @@ public class LanTcpServer implements LocalTcpServer {
   }
 
   public Future<String> getInviteCode() {
-    return CompletableFuture.completedFuture(ipToInvCode());
+    return CompletableFuture.completedFuture(ipToInvCode(localIp));
   }
 
-  private String ipToInvCode() {
+  private String ipToInvCode(String ip) {
     StringBuilder sb = new StringBuilder();
-    for (String part : localIp.split("\\.")) {
+    for (String part : ip.split("\\.")) {
       if (part.length() == 3) {
         sb.append(part);
       } else if (part.length() == 2) {
