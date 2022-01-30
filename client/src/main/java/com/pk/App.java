@@ -32,15 +32,6 @@ public class App extends Application {
       primaryStage.show();
     }
 
-    public static void showBoardScene() throws IOException {
-      locale = new Locale("pl_PL");
-      translations = ResourceBundle.getBundle("translations", locale);
-      Parent root = FXMLLoader.load(App.class.getClassLoader().getResource("BoardView.fxml"), translations);
-      stage.getIcons().add(new Image("https://i.ibb.co/yNH0t4d/icon.png"));
-      stage.setScene(new Scene(root, 800, 825));
-      stage.show();
-    }
-
 
 
     public static void main(String[] args) {

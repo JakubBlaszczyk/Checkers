@@ -1,5 +1,6 @@
 package com.pk.frontend.board;
 
+import com.pk.database.Database;
 import com.pk.frontend.checkers.*;
 import com.pk.logic.ImprovedLogic;
 import com.pk.logic.Indices;
@@ -18,13 +19,11 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -71,14 +70,18 @@ public class BoardController {
 
   private Logic logic;
 
+  private Database database;
+
   @FXML
   public void initialize(){
     blackWin.setVisible(false);
     whiteWin.setVisible(false);
   }
 
-  public void createContent(ActionEvent actionEvent) throws IllegalArgument {
+  public void createContent(ActionEvent actionEvent) throws IllegalArgument, SQLException {
     logic = new ImprovedLogic(HEIGHT, 3);
+    database = new Database("CheckersDatabase.db");
+    database.insertIntoGame("player1", "player2");
     Pane root = new Pane();
     root.setPrefSize(WIDTH * TILE_SIZE, HEIGHT * TILE_SIZE);
     root.getChildren().addAll(tileGroup, pieceGroup);
@@ -132,6 +135,7 @@ public class BoardController {
           piece.move(newX, newY);
           board[x0][y0].setPiece(null);
           board[newX][newY].setPiece(piece);
+          database.insertIntoMapHistory(1, x0, y0, newX, newY);
           break;
         case KILL:
           piece.move(newX, newY);
@@ -143,6 +147,7 @@ public class BoardController {
           log.info("board: ", board[indices.getX()][indices.getY()].getPiece());
           pieceGroup.getChildren().remove(board[indices.getX()][indices.getY()].getPiece());
           board[indices.getX()][indices.getY()].setPiece(null);
+          database.insertIntoMapHistory(1, x0, y0, newX, newY);
           break;
         case MANDATORY_KILL:
           piece.abortMove();
