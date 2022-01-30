@@ -1,36 +1,30 @@
 package com.pk.logic;
 
-import java.util.List;
-
-import com.pk.logic.exceptions.JumpedOverAlreadyKilledPiece;
-import com.pk.logic.exceptions.JumpedOverMoreThanOnePiece;
-import com.pk.logic.exceptions.JumpedOverSameColorPiece;
-import com.pk.logic.exceptions.MandatoryKillMove;
-import com.pk.logic.exceptions.MoreThanOneMoveMade;
-import com.pk.logic.exceptions.MoreThanOneTileMove;
-import com.pk.logic.exceptions.OverlappingPieces;
-import com.pk.logic.exceptions.VerticalOrHorizontalMove;
+import com.pk.frontend.checkers.MoveResult;
 
 public interface Logic {
-    /**
-     * This method updates board variable and throws if any illegal move occured.
-     * Otherwise method doesn't throw anything. Passed boards must contain only one
-     * alteration of position (one tick).
-     * 
-     * @throws MandatoryKillMove
-     * @throws VerticalOrHorizontalMove
-     * @throws MoreThanOneMoveMade
-     * @throws OverlappingPieces
-     * @throws JumpedOverSameColorPiece
-     * @throws JumpedOverMoreThanOnePiece
-     * @throws JumpedOverAlreadyKiledPiece
-     * @throws MoreThanOneTileMove
-     * 
-     * @param board next state of a board
-     * 
-     * @return returns whos move is next, 0 when black 1 when white
-     */
-    public Boolean update(List<List<Piece>> board)
-            throws MoreThanOneMoveMade, VerticalOrHorizontalMove, MandatoryKillMove, OverlappingPieces,
-            JumpedOverSameColorPiece, JumpedOverMoreThanOnePiece, JumpedOverAlreadyKilledPiece, MoreThanOneTileMove;
+
+  /**
+   * Method determines what type of move is to be taken with passed coordinates
+   * 
+   * @param newX it is just offset if move is left or right, coordinate for pawn
+   *             to have after move
+   * @param newY it is important as it is used to calculate direction in which
+   *             pawn is moving, if mistaken will result in NONE; coordinate for
+   *             pawn to have after move
+   * @param oldX coordinate of pawn before move for X axis
+   * @param oldY coordinate of pawn before move for Y axis; very important value
+   *             that is used in determining direction
+   * @return NONE if no move is to be made; MOVE if move is correctly taken; KILL
+   *         if there is need for second pawn to be modified, it also returns
+   *         indices of piece to be removed; MANDATORY_KILL if only kill move can
+   *         be made and error is to be shown
+   */
+  public MoveResult update(Integer newX, Integer newY, Integer oldX, Integer oldY);
+
+  /**
+   * @return String that is pretty board
+   */
+  public String toString();
+
 }
