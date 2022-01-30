@@ -3,21 +3,22 @@
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
 
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pk.frontend.menu.MainMenuController">
    <top>
-      <MenuBar BorderPane.alignment="CENTER">
+      <MenuBar style="-fx-background-color: #F2EEEB;" BorderPane.alignment="CENTER">
         <menus>
           <Menu fx:id="game" mnemonicParsing="false" text="%game">
             <items>
-              <MenuItem fx:id="returnToMenu" mnemonicParsing="false" text="%returnToMenu" />
-                  <MenuItem fx:id="leaveGame" mnemonicParsing="false" text="%leaveGame" />
+              <MenuItem fx:id="returnToMenu" mnemonicParsing="false" onAction="#showMenu" text="%returnToMenu" />
+                  <MenuItem fx:id="leaveGame" mnemonicParsing="false" onAction="#closeWindow" text="%leaveGame" />
             </items>
           </Menu>
           <Menu fx:id="help" mnemonicParsing="false" text="%help">
             <items>
-              <MenuItem fx:id="rules" mnemonicParsing="false" text="%rules" />
-                  <MenuItem fx:id="creators" mnemonicParsing="false" text="%creators" />
+              <MenuItem fx:id="rules" mnemonicParsing="false" onAction="#showRules" text="%rules" />
+                  <MenuItem fx:id="creators" mnemonicParsing="false" onAction="#showCreators" text="%creators" />
             </items>
           </Menu>
             <Menu fx:id="language" mnemonicParsing="false" text="%language">
@@ -30,19 +31,94 @@
       </MenuBar>
    </top>
    <center>
-      <StackPane prefHeight="150.0" prefWidth="200.0" BorderPane.alignment="CENTER">
+      <StackPane fx:id="stackPane" prefHeight="150.0" prefWidth="200.0" style="-fx-background-color: #F2BBC9;" BorderPane.alignment="CENTER">
          <children>
-            <Button fx:id="hotseat" mnemonicParsing="false" text="%hotseat" StackPane.alignment="CENTER">
+            <Button fx:id="hotseat" mnemonicParsing="false" onAction="#showBoard" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%hotseat" StackPane.alignment="CENTER">
                <StackPane.margin>
-                  <Insets bottom="200.0" />
+                  <Insets bottom="300.0" />
                </StackPane.margin>
+               <font>
+                  <Font name="Century Gothic Bold" size="36.0" />
+               </font>
             </Button>
-            <Button fx:id="multiplayer" layoutX="384.0" layoutY="385.0" mnemonicParsing="false" text="%multiplayer">
+            <Button fx:id="exit" layoutX="384.0" layoutY="285.0" mnemonicParsing="false" onAction="#closeWindow" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%exit">
+               <font>
+                  <Font name="Century Gothic Bold" size="36.0" />
+               </font>
+               <StackPane.margin>
+                  <Insets top="100.0" />
+               </StackPane.margin></Button>
+            <Button fx:id="joinGame" layoutX="306.0" layoutY="100.0" mnemonicParsing="false" onAction="#joinToGame" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%joinGame">
+               <font>
+                  <Font name="Century Gothic Bold" size="36.0" />
+               </font>
+            </Button>
+            <Button fx:id="multiplayer" layoutX="384.0" layoutY="385.0" mnemonicParsing="false" onAction="#showLobby" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%multiplayer">
                <StackPane.margin>
                   <Insets bottom="100.0" />
                </StackPane.margin>
+               <font>
+                  <Font name="Century Gothic Bold" size="36.0" />
+               </font>
             </Button>
-            <Button fx:id="exit" layoutX="384.0" layoutY="285.0" mnemonicParsing="false" text="%exit" />
+            <Button fx:id="newGame" layoutX="306.0" layoutY="213.0" mnemonicParsing="false" onAction="#createGame" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%createGame" StackPane.alignment="CENTER">
+               <font>
+                  <Font name="Century Gothic Bold" size="36.0" />
+               </font>
+               <StackPane.margin>
+                  <Insets bottom="250.0" />
+               </StackPane.margin>
+            </Button>
+            <TextField fx:id="codeInput" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="300.0">
+               <font>
+                  <Font name="Century Gothic" size="24.0" />
+               </font>
+            </TextField>
+            <Label fx:id="insertCode" text="%insertCode">
+               <StackPane.margin>
+                  <Insets bottom="100.0" />
+               </StackPane.margin>
+               <font>
+                  <Font name="Century Gothic" size="24.0" />
+               </font>
+            </Label>
+            <Button fx:id="join" layoutX="339.0" layoutY="413.0" mnemonicParsing="false" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%joinGame">
+               <font>
+                  <Font name="Century Gothic" size="24.0" />
+               </font>
+               <StackPane.margin>
+                  <Insets top="200.0" />
+               </StackPane.margin>
+            </Button>
+            <TextField fx:id="localIP" layoutX="260.0" layoutY="374.0" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="300.0">
+               <font>
+                  <Font name="Century Gothic" size="24.0" />
+               </font>
+            </TextField>
+            <Label fx:id="insertIP" layoutX="337.0" layoutY="332.0" text="%insertIP">
+               <font>
+                  <Font name="Century Gothic" size="24.0" />
+               </font>
+               <StackPane.margin>
+                  <Insets bottom="100.0" />
+               </StackPane.margin>
+            </Label>
+            <Button fx:id="generateCode" layoutX="327.0" layoutY="474.0" mnemonicParsing="false" onAction="#generateCode" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%generateCode">
+               <font>
+                  <Font name="Century Gothic" size="24.0" />
+               </font>
+               <StackPane.margin>
+                  <Insets top="200.0" />
+               </StackPane.margin>
+            </Button>
+            <TextField fx:id="inviteCode" editable="false" layoutX="260.0" layoutY="374.0" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="300.0" style="-fx-background-color: transparent; -fx-background-insets: 0px;">
+               <font>
+                  <Font name="Century Gothic" size="24.0" />
+               </font>
+               <StackPane.margin>
+                  <Insets top="350.0" />
+               </StackPane.margin>
+            </TextField>
          </children>
       </StackPane>
    </center>

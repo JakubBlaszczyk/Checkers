@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1">
+   <center>
+      <Label alignment="CENTER" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: #F2F0C9;" text="Błaszczyk Jakub&#10;Chmielewski Jan&#10;Ciura Mateusz&#10;Filipowski Arkadiusz&#10;Kałafut Gabriela" textAlignment="CENTER" textFill="#595959" BorderPane.alignment="CENTER">
+         <font>
+            <Font name="Century Gothic Bold Italic" size="58.0" />
+         </font>
+      </Label>
+   </center>
+</BorderPane>

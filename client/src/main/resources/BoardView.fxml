@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="800.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/11.0.2" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pk.frontend.board.BoardController">
+   <center>
+      <StackPane fx:id="stackPane" prefHeight="150.0" prefWidth="200.0" style="-fx-background-color: #F2BBC9;" BorderPane.alignment="CENTER">
+         <children>
+            <Button fx:id="startButton" mnemonicParsing="false" onAction="#createContent" style="-fx-background-color: #F2F0C9;" text="START">
+               <font>
+                  <Font name="Century Gothic" size="24.0" />
+               </font></Button>
+            <Label fx:id="blackWin" text="%blackWin">
+               <font>
+                  <Font name="Century Gothic" size="36.0" />
+               </font>
+               <StackPane.margin>
+                  <Insets bottom="200.0" />
+               </StackPane.margin>
+            </Label>
+            <Label fx:id="whiteWin" layoutX="315.0" layoutY="275.0" text="%whiteWin">
+               <font>
+                  <Font name="Century Gothic" size="36.0" />
+               </font>
+               <StackPane.margin>
+                  <Insets bottom="200.0" />
+               </StackPane.margin>
+            </Label>
+         </children>
+      </StackPane>
+   </center>
+   <top>
+       <MenuBar style="-fx-background-color: #F2EEEB;" BorderPane.alignment="CENTER">
+           <menus>
+               <Menu fx:id="game" mnemonicParsing="false" text="%game">
+                   <items>
+                       <MenuItem fx:id="returnToMenu" mnemonicParsing="false" onAction="#showMenu" text="%returnToMenu" />
+                       <MenuItem fx:id="leaveGame" mnemonicParsing="false" onAction="#closeWindow" text="%leaveGame" />
+                   </items>
+               </Menu>
+               <Menu fx:id="help" mnemonicParsing="false" text="%help">
+                   <items>
+                       <MenuItem fx:id="rules" mnemonicParsing="false" onAction="#showRules" text="%rules" />
+                       <MenuItem fx:id="creators" mnemonicParsing="false" onAction="#showCreators" text="%creators" />
+                   </items>
+               </Menu>
+               <Menu fx:id="language" mnemonicParsing="false" text="%language">
+                   <items>
+                       <MenuItem fx:id="polish" mnemonicParsing="false" onAction="#switchLanguageToPolish" text="%polish" />
+                       <MenuItem fx:id="english" mnemonicParsing="false" onAction="#switchLanguageToEnglish" text="%english" />
+                   </items>
+               </Menu>
+           </menus>
+       </MenuBar>
+   </top>
+</BorderPane>
