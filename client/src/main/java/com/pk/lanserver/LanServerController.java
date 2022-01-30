@@ -43,7 +43,7 @@ public class LanServerController implements ServerController {
       String profileImg,
       Map<String, Socket> mapInvToSock)
       throws IOException {
-    udpServer = new BasicUdpServer(nick, profileImg, localPort, remotePort);
+    udpServer = new BasicUdpServer(nick, profileImg, localPort, remotePort, localIp);
     tcpServer = new LanTcpServer(invites, messages, moves, localIp, localPort, remotePort, "dDI=", "dDI=", new HashMap<>());
     futureUdp = executorService.submit(udpServer);
     futureTcp = executorService.submit(tcpServer);
@@ -77,5 +77,13 @@ public class LanServerController implements ServerController {
   @Override
   public Future<String> getInviteCode() {
     return tcpServer.getInviteCode();
+  }
+
+  @Override
+  public void cleanup() {
+    try {
+      tcpServer.cleanup();
+    } catch (IOException ignore) {}
+    udpServer.cleanup();
   }
 }

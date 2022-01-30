@@ -24,4 +24,6 @@ public interface UdpServer extends Callable<Integer> {
   public void setNick(String nick);
 
   public void setProfileImg(String profileImg);
+
+  public void cleanup();
 }
