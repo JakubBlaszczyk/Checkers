@@ -1,28 +1,26 @@
 package com.pk;
 
-import com.pk.models.Config;
-import com.pk.models.Player;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.security.InvalidAlgorithmParameterException;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ThreadLocalRandom;
-import lombok.extern.slf4j.Slf4j;
+
+import com.pk.models.Config;
+import com.pk.models.Player;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.BidiMap;
-import org.apache.commons.collections4.bidimap.DualHashBidiMap;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Server implements Callable<Integer> {
@@ -30,22 +28,17 @@ public class Server implements Callable<Integer> {
   private ServerSocketChannel serverSocketChannel;
   // Nickname <-> SocketChannel
   private BidiMap<String, SocketChannel> connectedPlayersMap;
-  // key <-> SocketChannel
-  private BidiMap<SelectionKey, SocketChannel> tmpMap;
   // invite code <-> SocketChannel
   private BidiMap<String, SocketChannel> inviteCodeMap;
   // All active players
   private Set<Player> hashPlayers;
-  // Players in game
-  private Set<SocketChannel> allPlayersInGames;
 
   public Server(
       String ip,
       Integer port,
       BidiMap<String, SocketChannel> connectedPlayersMap,
       BidiMap<String, SocketChannel> inviteCodeMap,
-      Set<Player> hashPlayers,
-      Set<SocketChannel> allPlayersInGames)
+      Set<Player> hashPlayers)
       throws IOException {
     selector = Selector.open();
     serverSocketChannel = ServerSocketChannel.open();
@@ -55,8 +48,6 @@ public class Server implements Callable<Integer> {
     this.connectedPlayersMap = connectedPlayersMap;
     this.inviteCodeMap = inviteCodeMap;
     this.hashPlayers = hashPlayers;
-    this.allPlayersInGames = allPlayersInGames;
-    tmpMap = new DualHashBidiMap<>();
   }
 
   public void cleanup() throws IOException {
@@ -101,8 +92,7 @@ public class Server implements Callable<Integer> {
   private void handleAccept() throws IOException {
     SocketChannel sc = serverSocketChannel.accept();
     sc.configureBlocking(false);
-    SelectionKey tmp = sc.register(selector, SelectionKey.OP_READ);
-    tmpMap.put(tmp, sc);
+    sc.register(selector, SelectionKey.OP_READ);
     sc.write(ByteBuffer.wrap("checkers:Hello".getBytes()));
     log.info("Connection Accepted: " + sc.getLocalAddress());
   }
@@ -110,7 +100,6 @@ public class Server implements Callable<Integer> {
   private void handleClosedConnection(SelectionKey key, SocketChannel sc) {
     String nickToDelete = connectedPlayersMap.getKey(sc);
     connectedPlayersMap.remove(nickToDelete, sc);
-    tmpMap.remove(key, sc);
     for (Iterator<Player> it = hashPlayers.iterator(); it.hasNext(); ) {
       Player player = it.next();
       if (player.getNickname().equals(nickToDelete)) {
@@ -132,20 +121,21 @@ public class Server implements Callable<Integer> {
       handleClosedConnection(key, sc);
       return;
     }
-    String msg = new String(bb.array(), 0, len).strip();
-    if (msg.charAt(msg.length() - 1) == '!') {
-      msg = msg.substring(0, msg.length() - 1);
+    String rawMsg = new String(bb.array(), 0, len).strip();
+    if (rawMsg.charAt(rawMsg.length() - 1) == '!') {
+      rawMsg = rawMsg.substring(0, rawMsg.length() - 1);
     }
-    log.info("Message received: <{}>, len: {}", msg, msg.length());
+    log.info("Message received: <{}>, len: {}", rawMsg, rawMsg.length());
+    String[] messages = rawMsg.split("!");
+    for (String msg : messages) {
+      handleSingleMessage(key, sc, msg);
+    }
+  }
+
+  private void handleSingleMessage(SelectionKey key, SocketChannel sc, String msg) {
     if (msg.startsWith("checkers:config ")) {
       try {
         handleConfig(sc, msg);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-    } else if (msg.equals("checkers:randomGame")) {
-      try {
-        handleRandomGame(key, sc);
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -198,11 +188,11 @@ public class Server implements Callable<Integer> {
     Thread th =
         new Thread(
             new SessionHandler(
-                connectedPlayersMap.getKey(sc),
-                connectedPlayersMap.getKey(channel),
                 sc.socket(),
                 channel.socket(),
-                connectedPlayersMap));
+                connectedPlayersMap,
+                inviteCodeMap,
+                hashPlayers));
     th.start();
   }
 
@@ -275,90 +265,6 @@ public class Server implements Callable<Integer> {
     }
     inviteCodeMap.put(uuid, sc);
     return uuid;
-  }
-
-  private void handleRandomGame(SelectionKey key, SocketChannel sc) throws IOException {
-    if (!connectedPlayersMap.containsValue(sc)) {
-      sc.write(ByteBuffer.wrap("checkers:randomMissingConf".getBytes()));
-    }
-    key.cancel();
-    Optional<List<Socket>> sockets = findPlayersToRandomGame(sc);
-    if (sockets.isEmpty()) {
-      sc.write(ByteBuffer.wrap("checkers:randomNoPlayers".getBytes()));
-      return;
-    }
-    List<Socket> tmp = sockets.get();
-    Socket sOne = tmp.get(0);
-    Socket sTwo = tmp.get(1);
-    Thread th =
-        new Thread(
-            new SessionHandler(
-                connectedPlayersMap.getKey(sOne),
-                connectedPlayersMap.getKey(sTwo),
-                sOne,
-                sTwo,
-                connectedPlayersMap));
-    th.start();
-    sOne.getOutputStream().write("checkers:randomStart".getBytes());
-    sTwo.getOutputStream().write("checkers:randomStart".getBytes());
-  }
-
-  private Optional<List<Socket>> findPlayersToRandomGame(SocketChannel src) {
-    if (connectedPlayersMap.size() == 1) {
-      log.info("Only one player active");
-      return Optional.empty();
-    }
-    if (connectedPlayersMap.size() - allPlayersInGames.size() < 2) {
-      log.info("Only one player available");
-      return Optional.empty();
-    }
-    SocketChannel dst = getRandomPlayerChannel(src);
-    SelectionKey key = tmpMap.getKey(dst);
-    key.cancel();
-    try {
-      src.configureBlocking(true);
-      dst.configureBlocking(true);
-    } catch (IOException e) {
-      log.error("configureBlocking throw IOException, socketChannel is not canceled (?)", e);
-      return Optional.empty();
-    }
-    return Optional.of(List.of(src.socket(), dst.socket()));
-  }
-
-  private SocketChannel getRandomPlayerChannel(SocketChannel src) {
-    SocketChannel dst = null;
-    int idx = 0;
-    boolean flag = false;
-    List<Integer> blacklist = new ArrayList<>();
-    for (; ; ) {
-      if (flag) {
-        break;
-      }
-      idx = 0;
-      int random = ThreadLocalRandom.current().nextInt(0, connectedPlayersMap.size());
-      if (blacklist.contains(random)) {
-        continue;
-      }
-      for (SocketChannel sc : connectedPlayersMap.values()) {
-        if (idx == random) {
-          if (sc == src) {
-            if (random == connectedPlayersMap.size() - 1) {
-              blacklist.add(random);
-              break;
-            } else {
-              random++;
-            }
-            idx++;
-            continue;
-          }
-          dst = sc;
-          flag = true;
-          break;
-        }
-        idx++;
-      }
-    }
-    return dst;
   }
 
   private byte[] transformPlayersListIntoBytes() {
