@@ -3,7 +3,6 @@ package com.pk.database;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
@@ -70,6 +69,5 @@ public class test {
     System.out.println("Kroków lista: ");
     for (MapHistory s : steps)
       System.out.println(s);
-
   }
 }

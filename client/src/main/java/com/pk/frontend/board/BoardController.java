@@ -2,7 +2,6 @@ package com.pk.frontend.board;
 
 import com.pk.database.Database;
 import com.pk.frontend.checkers.*;
-import com.pk.frontend.menu.MainMenuController;
 import com.pk.lanserver.ServerDetails;
 import com.pk.lanserver.WebTcpClient;
 import com.pk.lanserver.exceptions.MoveRejected;
@@ -29,15 +28,14 @@ import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
-import java.util.Base64;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.concurrent.*;
 
 @Slf4j
 public class BoardController {
+  public static final String ICON_URL = "https://i.ibb.co/yNH0t4d/icon.png";
   public static final int TILE_SIZE = 100;
   public static final int WIDTH = 8;
   public static final int HEIGHT = 8;
@@ -335,7 +333,7 @@ public class BoardController {
     Stage stage = new Stage();
     Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("CreatorsView.fxml"));
     stage.setScene(new Scene(root,600,400));
-    stage.getIcons().add(new Image("https://i.ibb.co/yNH0t4d/icon.png"));
+    stage.getIcons().add(new Image(ICON_URL));
     stage.show();
   }
 
@@ -343,7 +341,7 @@ public class BoardController {
     Stage stage = new Stage();
     Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("RulesView.fxml"));
     stage.setScene(new Scene(root,800,600));
-    stage.getIcons().add(new Image("https://i.ibb.co/yNH0t4d/icon.png"));
+    stage.getIcons().add(new Image(ICON_URL));
     stage.show();
   }
 
@@ -359,7 +357,7 @@ public class BoardController {
     bundle = ResourceBundle.getBundle("translations", locale);
     Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("MainMenuView.fxml"), bundle);
     stage.setTitle("Checkers");
-    stage.getIcons().add(new Image("https://i.ibb.co/yNH0t4d/icon.png"));
+    stage.getIcons().add(new Image(ICON_URL));
     stage.setScene(new Scene(root, 800, 800));
     oldStage.close();
     stage.show();

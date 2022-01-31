@@ -1,6 +1,5 @@
 package com.pk.database;
 
-import lombok.AllArgsConstructor;
 import lombok.Value;
 
 @Value
