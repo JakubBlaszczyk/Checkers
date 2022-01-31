@@ -5,6 +5,14 @@ import com.pk.database.Database;
 import com.pk.database.Game;
 import com.pk.database.MapHistory;
 import com.pk.frontend.board.BoardController;
+import com.pk.lanserver.ServerDetails;
+import com.pk.lanserver.WebTcpClient;
+import com.pk.lanserver.exceptions.InvitationRejected;
+import com.pk.lanserver.exceptions.MoveRejected;
+import com.pk.lanserver.models.Invite;
+import com.pk.lanserver.models.Move;
+import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -18,11 +26,14 @@ import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * Used to handle GUI operations
@@ -79,10 +90,32 @@ public class MainMenuController {
     private TextField inviteCode;
     @FXML
     private Button history;
+    @FXML
+    private Label insertUsername;
+    @FXML
+    private TextField username;
+    @FXML
+    private Button acceptUsername;
+    @FXML
+    private Label insertPort;
+    @FXML
+    private TextField localPort;
+    @FXML
+    private Button waitButton;
+    @FXML
+    private Label waiting;
 
     private Database database;
 
     private BoardController boardController = new BoardController();
+
+    public WebTcpClient wts;
+
+    public BlockingQueue<String> bQS;
+
+    public BlockingQueue<Move> bQM;
+
+    public BlockingQueue<Invite> bQI;
 
     @FXML
     public void initialize(){
@@ -95,6 +128,13 @@ public class MainMenuController {
         insertIP.setVisible(false);
         generateCode.setVisible(false);
         inviteCode.setVisible(false);
+        insertUsername.setVisible(false);
+        username.setVisible(false);
+        acceptUsername.setVisible(false);
+        insertPort.setVisible(false);
+        localPort.setVisible(false);
+        waitButton.setVisible(false);
+        waiting.setVisible(false);
     }
 
     public void switchLanguageToEnglish(){
@@ -127,6 +167,11 @@ public class MainMenuController {
         insertIP.setText(bundle.getString("insertIP"));
         generateCode.setText(bundle.getString("generateCode"));
         history.setText(bundle.getString("history"));
+        insertUsername.setText(bundle.getString("insertUsername"));
+        acceptUsername.setText(bundle.getString("acceptUsername"));
+        insertPort.setText(bundle.getString("insertPort"));
+        waitButton.setText(bundle.getString("waitButton"));
+        waiting.setVisible(bundle.containsKey("waiting"));
     }
 
     public void showCreators() throws IOException {
@@ -137,16 +182,15 @@ public class MainMenuController {
         stage.show();
     }
 
-    public void showLobby(ActionEvent actionEvent){
-        hotseat.setVisible(false);
-        multiplayer.setVisible(false);
-        history.setVisible(false);
-        exit.setVisible(false);
+    public void showLobby(){
+        username.setVisible(false);
+        insertUsername.setVisible(false);
+        acceptUsername.setVisible(false);
         joinGame.setVisible(true);
         newGame.setVisible(true);
     }
 
-    public void showBoard(ActionEvent actionEvent) throws IOException {
+    public void showBoard() throws IOException {
         Stage oldStage = (Stage) exit.getScene().getWindow();
         Stage stage = new Stage();
         locale = new Locale("pl_PL");
@@ -184,6 +228,31 @@ public class MainMenuController {
         stage.show();
     }
 
+    public void initializeServer(String address, Integer port, String nickname) throws IOException {
+        bQI = new LinkedBlockingQueue<>();
+        bQS = new LinkedBlockingQueue<>();
+        bQM = new LinkedBlockingQueue<>();
+        wts = new WebTcpClient(bQI, bQS, bQM, address, port, Base64.getEncoder().encodeToString(nickname.getBytes(StandardCharsets.UTF_8)),
+                "dGVzdA==");
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        executorService.submit(wts);
+    }
+
+    public void inputUsername(){
+        hotseat.setVisible(false);
+        multiplayer.setVisible(false);
+        history.setVisible(false);
+        exit.setVisible(false);
+        username.setVisible(true);
+        acceptUsername.setVisible(true);
+        insertUsername.setVisible(true);
+    }
+
+    public void setUsername(){
+        log.info("username: " + username.getText());
+        showLobby();
+    }
+
     public void createGame(){
         newGame.setVisible(false);
         joinGame.setVisible(false);
@@ -192,17 +261,57 @@ public class MainMenuController {
         generateCode.setVisible(true);
     }
 
-    public void generateCode(){
-        inviteCode.setText("KOD ARKADIUSZA");
+    public void generateCode() throws ExecutionException, InterruptedException, IOException {
+        initializeServer(localIP.getText(), 6969, username.getText());
+        String code = wts.getInviteCode().get();
+        inviteCode.setText(code);
         inviteCode.setVisible(true);
+        waitButton.setVisible(true);
+    }
+
+    public void showWaitingScreen() throws InterruptedException, IOException {
+
+        TimeUnit.SECONDS.sleep(2);
+        for (; ; ) {
+            TimeUnit.SECONDS.sleep(1);
+            if (!bQI.isEmpty()) {
+                break;
+            }
+        }
+        Invite inv = (Invite) bQI.poll();
+        wts.acceptInvitation(inv.getCode());
+        wts.chatSendMsg("my turn");
+        TimeUnit.SECONDS.sleep(1);
+        ServerDetails.setWts(wts);
+        ServerDetails.setbQI(bQI);
+        ServerDetails.setbQM(bQM);
+        ServerDetails.setbQS(bQS);
+        showBoard();
     }
 
     public void joinToGame(){
         newGame.setVisible(false);
         joinGame.setVisible(false);
+        localIP.setVisible(true);
+        insertIP.setVisible(true);
         codeInput.setVisible(true);
         insertCode.setVisible(true);
         join.setVisible(true);
+    }
+
+    public void joinActiveGame() throws IOException, ExecutionException, InterruptedException, InvitationRejected, MoveRejected {
+        bQI = new LinkedBlockingQueue<>();
+        bQS = new LinkedBlockingQueue<>();
+        bQM = new LinkedBlockingQueue<>();
+        wts = new WebTcpClient(bQI, bQS, bQM, localIP.getText(), 6969, Base64.getEncoder().encodeToString(username.getText().getBytes(StandardCharsets.UTF_8)), "dDI=");
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        executorService.submit(wts);
+        log.info("Got invite code: {}", wts.getInviteCode().get());
+        log.info("Got active players: {}", wts.getActivePlayers().get());
+        TimeUnit.SECONDS.sleep(1);
+        wts.invite(codeInput.getText()).get();
+        wts.chatSendMsg("your turn");
+        showBoard();
     }
 
     public void showHistory() throws SQLException {

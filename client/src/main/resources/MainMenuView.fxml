@@ -33,6 +33,11 @@
    <center>
       <StackPane fx:id="stackPane" prefHeight="150.0" prefWidth="200.0" style="-fx-background-color: #F2BBC9;" BorderPane.alignment="CENTER">
          <children>
+            <Label fx:id="waiting" layoutX="361.0" layoutY="232.0" text="%waiting">
+               <font>
+                  <Font name="Century Gothic" size="24.0" />
+               </font>
+            </Label>
             <Button fx:id="hotseat" mnemonicParsing="false" onAction="#showBoard" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%hotseat" StackPane.alignment="CENTER">
                <StackPane.margin>
                   <Insets bottom="300.0" />
@@ -53,7 +58,7 @@
                   <Font name="Century Gothic Bold" size="36.0" />
                </font>
             </Button>
-            <Button fx:id="multiplayer" layoutX="384.0" layoutY="385.0" mnemonicParsing="false" onAction="#showLobby" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%multiplayer">
+            <Button fx:id="multiplayer" layoutX="384.0" layoutY="385.0" mnemonicParsing="false" onAction="#inputUsername" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%multiplayer">
                <StackPane.margin>
                   <Insets bottom="100.0" />
                </StackPane.margin>
@@ -82,7 +87,7 @@
                   <Font name="Century Gothic" size="24.0" />
                </font>
             </Label>
-            <Button fx:id="join" layoutX="339.0" layoutY="413.0" mnemonicParsing="false" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%joinGame">
+            <Button fx:id="join" layoutX="339.0" layoutY="413.0" mnemonicParsing="false" onAction="#joinActiveGame" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%joinGame">
                <font>
                   <Font name="Century Gothic" size="24.0" />
                </font>
@@ -94,13 +99,16 @@
                <font>
                   <Font name="Century Gothic" size="24.0" />
                </font>
+               <StackPane.margin>
+                  <Insets bottom="200.0" />
+               </StackPane.margin>
             </TextField>
             <Label fx:id="insertIP" layoutX="337.0" layoutY="332.0" text="%insertIP">
                <font>
                   <Font name="Century Gothic" size="24.0" />
                </font>
                <StackPane.margin>
-                  <Insets bottom="100.0" />
+                  <Insets bottom="300.0" />
                </StackPane.margin>
             </Label>
             <Button fx:id="generateCode" layoutX="327.0" layoutY="474.0" mnemonicParsing="false" onAction="#generateCode" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%generateCode">
@@ -125,6 +133,48 @@
                </font>
                <StackPane.margin>
                   <Insets top="100.0" />
+               </StackPane.margin>
+            </Button>
+            <TextField fx:id="username" layoutX="260.0" layoutY="374.0" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="300.0">
+               <font>
+                  <Font name="Century Gothic" size="24.0" />
+               </font>
+            </TextField>
+            <Label fx:id="insertUsername" layoutX="361.0" layoutY="332.0" text="%insertUsername">
+               <font>
+                  <Font name="Century Gothic" size="24.0" />
+               </font>
+               <StackPane.margin>
+                  <Insets bottom="100.0" />
+               </StackPane.margin>
+            </Label>
+            <Button fx:id="acceptUsername" layoutX="296.0" layoutY="474.0" mnemonicParsing="false" onAction="#setUsername" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%acceptUsername">
+               <font>
+                  <Font name="Century Gothic" size="24.0" />
+               </font>
+               <StackPane.margin>
+                  <Insets top="200.0" />
+               </StackPane.margin>
+            </Button>
+            <Label fx:id="insertPort" layoutX="361.0" layoutY="232.0" text="%insertPort">
+               <font>
+                  <Font name="Century Gothic" size="24.0" />
+               </font>
+               <StackPane.margin>
+                  <Insets bottom="100.0" />
+               </StackPane.margin>
+            </Label>
+            <TextField fx:id="localPort" layoutX="260.0" layoutY="274.0" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="300.0">
+               <font>
+                  <Font name="Century Gothic" size="24.0" />
+               </font>
+            </TextField>
+            <Button fx:id="waitButton" layoutX="282.0" layoutY="474.0" mnemonicParsing="false" onAction="#showWaitingScreen" style="-fx-background-color: #F2F0C9; -fx-text-fill: #595959;" text="%waitButton">
+               <font>
+                  <Font name="Century Gothic" size="24.0" />
+               </font>
+               <StackPane.margin>
+                  <Insets top="500.0" />
                </StackPane.margin>
             </Button>
          </children>
