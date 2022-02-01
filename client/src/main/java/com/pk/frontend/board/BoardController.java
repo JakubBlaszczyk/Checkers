@@ -36,7 +36,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
 
 @Slf4j
 public class BoardController {
@@ -217,7 +217,7 @@ public class BoardController {
             }
           }
           if (!piece.isQueen) {
-            if((newY == 0 && piece.getType().equals(PieceType.WHITE)) || (newY == 7 && piece.getType().equals(PieceType.BLACK))) {
+            if ((newY == 0 && piece.getType().equals(PieceType.WHITE)) || (newY == 7 && piece.getType().equals(PieceType.BLACK))) {
               piece.makeQueen();
             }
           }
@@ -243,7 +243,7 @@ public class BoardController {
             }
           }
           if (!piece.isQueen) {
-            if((newY == 0 && piece.getType().equals(PieceType.WHITE)) || (newY == 7 && piece.getType().equals(PieceType.BLACK))) {
+            if ((newY == 0 && piece.getType().equals(PieceType.WHITE)) || (newY == 7 && piece.getType().equals(PieceType.BLACK))) {
               piece.makeQueen();
             }
           }
@@ -270,13 +270,15 @@ public class BoardController {
         log.info("GAME OVER - White wins");
         stackPane.getChildren().clear();
         stackPane.getChildren().add(whiteWin);
-        stackPane.getChildren().add(startButton);
+        stackPane.getChildren().add(returnToMenuButton);
+        returnToMenuButton.setVisible(true);
         whiteWin.setVisible(true);
       } else if (whitePieces.equals(0)) {
         log.info("GAME OVER - Black wins");
         stackPane.getChildren().clear();
         stackPane.getChildren().add(blackWin);
-        stackPane.getChildren().add(startButton);
+        stackPane.getChildren().add(returnToMenuButton);
+        returnToMenuButton.setVisible(true);
         blackWin.setVisible(true);
       }
     });
@@ -401,7 +403,7 @@ public class BoardController {
   }
 
   public void showMenu() throws IOException {
-    Stage oldStage = (Stage) startButton.getScene().getWindow();
+    Stage oldStage = (Stage) returnToMenuButton.getScene().getWindow();
     Stage stage = new Stage();
     locale = new Locale("pl_PL");
     bundle = ResourceBundle.getBundle("translations", locale);
