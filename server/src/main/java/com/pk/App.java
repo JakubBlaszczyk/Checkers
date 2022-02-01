@@ -27,7 +27,7 @@ public class App {
     String ip = prop.getProperty("server.ipBind");
     Integer port = Integer.parseInt(prop.getProperty("server.port"));
     try {
-      Server server = new Server(ip, port, new DualHashBidiMap<>(), new DualHashBidiMap<>(), new HashSet<>(), new HashSet<>());
+      Server server = new Server(ip, port, new DualHashBidiMap<>(), new DualHashBidiMap<>(), new HashSet<>());
       server.call();
     } catch (IOException e) {
       log.error("Server is dead");

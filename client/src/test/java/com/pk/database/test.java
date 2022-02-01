@@ -3,7 +3,6 @@ package com.pk.database;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLException;
@@ -32,8 +31,10 @@ public class test {
 
   @Test
   public void createGameRecord() {
-    b.insertIntoGame("Arek", "Daniel");
-    b.insertIntoGame("Jan", "Jakub");
+    int index = b.insertIntoGame("Arek", "Daniel");
+    System.out.println("New index: " + index);
+    index = b.insertIntoGame("Jan", "Jakub");
+    System.out.println("New index2: " + index);
 
     List<Game> matches = b.selectFromGame();
 
@@ -68,6 +69,5 @@ public class test {
     System.out.println("Kroków lista: ");
     for (MapHistory s : steps)
       System.out.println(s);
-
   }
 }

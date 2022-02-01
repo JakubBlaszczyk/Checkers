@@ -11,7 +11,7 @@ import com.pk.lanserver.models.Move;
 /** Class used to perform all actions on Tcp stream. */
 public interface LocalTcpServer extends Callable<Integer> {
   /**
-   * Method used to create GameSession with specified player.
+   * Create GameSession with specified player.
    *
    * @param player selected players invite
    * @return new instance of GameSession
@@ -19,7 +19,7 @@ public interface LocalTcpServer extends Callable<Integer> {
   public Future<Boolean> invite(String inviteCode) throws InvitationRejected, IOException;
 
   /**
-   * Method used to create GameSession to specified player.
+   * Create GameSession to specified player.
    *
    * @param invite selected players invitation.
    * @return new instance of GameSession.
@@ -27,12 +27,12 @@ public interface LocalTcpServer extends Callable<Integer> {
   public boolean acceptInvitation(String inviteCode) throws IOException;
 
   /**
-   * Method used to close socket and selector used by Tcp server.
+   * Close socket and selector used by Tcp server.
    *
    * @throws IOException if socket or selector is already closed.
    */
   public void cleanup() throws IOException;
-  //////////////
+
   /**
    * Send move to player.
    *

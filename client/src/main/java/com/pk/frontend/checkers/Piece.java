@@ -15,6 +15,13 @@ public class Piece extends StackPane {
     private double mouseY;
     private double oldX;
     private double oldY;
+    public SVGPath heart;
+    public boolean isQueen;
+
+    public void makeQueen() {
+        this.getChildren().remove(this.heart);
+        isQueen = true;
+    }
 
     public PieceType getType() {
         return type;
@@ -29,11 +36,11 @@ public class Piece extends StackPane {
     }
 
     public Piece(PieceType type, int x, int y) {
+        isQueen = false;
         this.type = type;
 
         move(x, y);
-
-        SVGPath heart = new SVGPath();
+        heart = new SVGPath();
         heart.setContent("M23.6,0c-3.4,0-6.3,2.7-7.6,5.6C14.7,2.7,11.8,0,8.4,0C3.8,0,0,3.8,0,8.4c0,9.4,9.5,11.9,16,21.2c6.1-9.3,16-12.1,16-21.2C32,3.8,28.2,0,23.6,0z");
 
 

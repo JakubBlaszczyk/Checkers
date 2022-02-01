@@ -37,12 +37,12 @@ public class BasicUdpServer implements UdpServer {
 
   private static final Integer TIMEOUT = 4;
 
-  public BasicUdpServer(String nick, String profileImg, Integer localPort, Integer remotePort)
-      throws SocketException {
+  public BasicUdpServer(String nick, String profileImg, Integer localPort, Integer remotePort, String localIp)
+      throws SocketException, UnknownHostException {
     setNick(nick);
     setProfileImg(profileImg);
     this.remotePort = remotePort;
-    ds = createSocket(localPort);
+    ds = createSocket(localPort, localIp);
     ds.setBroadcast(true);
     setLocalIps = new HashSet<>();
 
@@ -75,6 +75,11 @@ public class BasicUdpServer implements UdpServer {
       throw new IllegalArgumentException("Nick is empty");
     }
     this.profileImg = profileImg;
+  }
+
+  @Override
+  public void cleanup() {
+    ds.close();
   }
 
   /** */
@@ -171,8 +176,8 @@ public class BasicUdpServer implements UdpServer {
     return new DatagramPacket(buf, buf.length, addr, remotePort);
   }
 
-  protected DatagramSocket createSocket(Integer port) throws SocketException {
-    return new DatagramSocket(port);
+  protected DatagramSocket createSocket(Integer port, String localIp) throws SocketException, UnknownHostException {
+    return new DatagramSocket(port, InetAddress.getByName(localIp));
   }
 
   private boolean verifyProbe(String msg) {
