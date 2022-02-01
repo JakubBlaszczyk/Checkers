@@ -216,6 +216,11 @@ public class BoardController {
               ex.printStackTrace();
             }
           }
+          if (!piece.isQueen) {
+            if((newY == 0 && piece.getType().equals(PieceType.WHITE)) || (newY == 7 && piece.getType().equals(PieceType.BLACK))) {
+              piece.makeQueen();
+            }
+          }
           break;
         case KILL:
           piece.move(newX, newY);
@@ -235,6 +240,11 @@ public class BoardController {
               ex.printStackTrace();
             } catch (MoveRejected ex) {
               ex.printStackTrace();
+            }
+          }
+          if (!piece.isQueen) {
+            if((newY == 0 && piece.getType().equals(PieceType.WHITE)) || (newY == 7 && piece.getType().equals(PieceType.BLACK))) {
+              piece.makeQueen();
             }
           }
           break;

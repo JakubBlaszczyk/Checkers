@@ -135,7 +135,7 @@ public class MainMenuController {
     acceptUsername.setText(bundle.getString("acceptUsername"));
     insertPort.setText(bundle.getString("insertPort"));
     waitButton.setText(bundle.getString("waitButton"));
-    waiting.setVisible(bundle.containsKey("waiting"));
+    waiting.setText(bundle.getString("waiting"));
   }
 
   public void showCreators() throws IOException {
