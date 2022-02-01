@@ -8,6 +8,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.security.InvalidAlgorithmParameterException;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
@@ -127,6 +128,7 @@ public class Server implements Callable<Integer> {
     }
     log.info("Message received: <{}>, len: {}", rawMsg, rawMsg.length());
     String[] messages = rawMsg.split("!");
+    log.info("Split messages: <{}>", Arrays.toString(messages));
     for (String msg : messages) {
       handleSingleMessage(key, sc, msg);
     }
