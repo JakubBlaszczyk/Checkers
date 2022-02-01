@@ -64,6 +64,7 @@ public class SessionHandler implements Runnable {
   }
 
   private void closeConnection() {
+    log.info("Terminating SessionHandler");
     deleteOneClient(sFirst.getChannel());
     deleteOneClient(sSecond.getChannel());
   }
@@ -82,7 +83,7 @@ public class SessionHandler implements Runnable {
   }
 
   private boolean trySocket(InputStream in, OutputStream out, byte[] buf) {
-    while (true) {
+    // while (true) {
       try {
         int len = in.read(buf);
         log.info("Got msg len: {}", len);
@@ -97,10 +98,11 @@ public class SessionHandler implements Runnable {
         return true;
       } catch (SocketTimeoutException ignore) {
         log.trace("trySocket timeout");
+        return true;
       } catch (Exception e) {
         log.error("trySocket error, {}", e);
         return false;
       }
-    }
+    // }
   }
 }
