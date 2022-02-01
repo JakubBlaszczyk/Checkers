@@ -166,7 +166,7 @@ public class Server implements Callable<Integer> {
         e.printStackTrace();
       }
     } else {
-      log.warn("Got invalid message");
+      log.warn("Got invalid message: {}", msg);
     }
   }
 
