@@ -79,6 +79,8 @@ public class BoardController {
   private Label whiteWin;
   @FXML
   private Label blackWin;
+  @FXML
+  private Button returnToMenuButton;
 
   private Logic logic;
 
@@ -103,6 +105,7 @@ public class BoardController {
   public void initialize() throws IOException, InterruptedException {
     blackWin.setVisible(false);
     whiteWin.setVisible(false);
+    returnToMenuButton.setVisible(false);
     configureServer();
     if (wts != null) {
       oponentUsername = bQS.take();
@@ -288,7 +291,7 @@ public class BoardController {
         piece.move(newX, newY);
         board[x0][y0].setPiece(null);
         board[newX][newY].setPiece(piece);
-        database.insertIntoMapHistory(1, x0, y0, newX, newY);
+        database.insertIntoMapHistory(gameId, x0, y0, newX, newY);
         break;
       case KILL:
         piece.move(newX, newY);
@@ -300,7 +303,7 @@ public class BoardController {
         log.info("board: ", board[indices.getX()][indices.getY()].getPiece());
         pieceGroup.getChildren().remove(board[indices.getX()][indices.getY()].getPiece());
         board[indices.getX()][indices.getY()].setPiece(null);
-        database.insertIntoMapHistory(1, x0, y0, newX, newY);
+        database.insertIntoMapHistory(gameId, x0, y0, newX, newY);
         break;
       case MANDATORY_KILL:
         piece.abortMove();
@@ -324,13 +327,15 @@ public class BoardController {
       log.info("GAME OVER - White wins");
       stackPane.getChildren().clear();
       stackPane.getChildren().add(whiteWin);
-      stackPane.getChildren().add(startButton);
+      stackPane.getChildren().add(returnToMenuButton);
+      returnToMenuButton.setVisible(true);
       whiteWin.setVisible(true);
     } else if (whitePieces.equals(0)) {
       log.info("GAME OVER - Black wins");
       stackPane.getChildren().clear();
       stackPane.getChildren().add(blackWin);
-      stackPane.getChildren().add(startButton);
+      stackPane.getChildren().add(returnToMenuButton);
+      returnToMenuButton.setVisible(true);
       blackWin.setVisible(true);
     }
   }
@@ -361,6 +366,7 @@ public class BoardController {
     english.setText(bundle.getString("english"));
     whiteWin.setText(bundle.getString("whiteWin"));
     blackWin.setText(bundle.getString("blackWin"));
+    returnToMenuButton.setText(bundle.getString("returnToMenu"));
   }
 
   public void showCreators() throws IOException {
@@ -398,17 +404,7 @@ public class BoardController {
   }
 
   @FXML
-  public void configureServer() throws IOException {
-//    locale = new Locale("pl_PL");
-//    bundle = ResourceBundle.getBundle("translations", locale);
-//    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getClassLoader().getResource("MainMenuView.fxml"), bundle);
-//    Parent root = fxmlLoader.load();
-//    log.info(fxmlLoader.toString());
-//    MainMenuController mainMenuController = (MainMenuController) fxmlLoader.getController();
-//    wts = mainMenuController.wts;
-//    bQI = mainMenuController.bQI;
-//    bQM = mainMenuController.bQM;
-//    bQS = mainMenuController.bQS;
+  public void configureServer() {
     wts = ServerDetails.getWts();
     bQI = ServerDetails.getbQI();
     bQM = ServerDetails.getbQM();

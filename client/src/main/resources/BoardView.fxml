@@ -29,6 +29,11 @@
                   <Insets bottom="200.0" />
                </StackPane.margin>
             </Label>
+            <Button fx:id="returnToMenuButton" layoutX="362.0" layoutY="374.0" mnemonicParsing="false" onAction="#showMenu" style="-fx-background-color: #F2F0C9;" text="%returnToMenu">
+               <font>
+                  <Font name="Century Gothic" size="24.0" />
+               </font>
+            </Button>
          </children>
       </StackPane>
    </center>
