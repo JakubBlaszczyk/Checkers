@@ -11,7 +11,10 @@ import com.pk.logic.ImprovedLogic;
 import com.pk.logic.Indices;
 import com.pk.logic.Logic;
 import com.pk.logic.exceptions.IllegalArgument;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Group;
@@ -25,6 +28,8 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import javafx.util.Duration;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -89,25 +94,50 @@ public class BoardController {
 
   private Integer gameId;
 
-  private String whichPlayer;
+  private String oponentUsername;
+
+  private PieceType whichColor;
+
 
   @FXML
-  public void initialize() throws IOException {
+  public void initialize() throws IOException, InterruptedException {
     blackWin.setVisible(false);
     whiteWin.setVisible(false);
     configureServer();
-    if(bQS.poll() != null && bQS.poll().equals("your turn")){
-      whichPlayer = "first";
-    }
-    else{
-      whichPlayer = "second";
+    if (wts != null) {
+      oponentUsername = bQS.take();
+      if ("your turn".equals(bQS.take())) {
+        whichColor = PieceType.BLACK;
+        log.info("jestem czarny");
+      } else {
+        whichColor = PieceType.WHITE;
+        log.info("jestem biały");
+      }
+      Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), new EventHandler<ActionEvent>() {
+        @SneakyThrows
+        @Override
+        public void handle(ActionEvent actionEvent) {
+          Move move = bQM.poll();
+          if (move != null) {
+            log.info("mam ruch");
+            movePiece(move);
+          }
+        }
+      }));
+      timeline.setCycleCount(Timeline.INDEFINITE);
+      timeline.play();
     }
   }
 
-  public void createContent(ActionEvent actionEvent) throws IllegalArgument, SQLException {
+  public void createContent(ActionEvent actionEvent) throws IllegalArgument, SQLException, InterruptedException {
     logic = new ImprovedLogic(HEIGHT, 3);
-    database = new Database("CheckersDatabase.db");
-    gameId = database.insertIntoGame("player1", "player2");
+    database = new Database("client/target/CheckersDatabase.db");
+    if (wts != null) {
+      gameId = database.insertIntoGame(ServerDetails.getUsername(), oponentUsername);
+    } else {
+      gameId = database.insertIntoGame("localPlayer1", "localPlayer2");
+    }
+
     Pane root = new Pane();
     root.setPrefSize(WIDTH * TILE_SIZE, HEIGHT * TILE_SIZE);
     root.getChildren().addAll(tileGroup, pieceGroup);
@@ -137,9 +167,6 @@ public class BoardController {
     }
     stackPane.getChildren().add(root);
 
-    if(whichPlayer.equals("second")){
-      movePiece();
-    }
   }
 
   private Piece makePiece(PieceType type, int x, int y) {
@@ -152,9 +179,21 @@ public class BoardController {
 
       int x0 = toBoard(piece.getOldX());
       int y0 = toBoard(piece.getOldY());
-      result = logic.update(newX, newY, x0, y0);
-      log.info("newX: {} | newY: {} | x0: {} | y0: {}", newX, newY, x0, y0);
-      log.info("{}", logic.toString());
+
+      if (whichColor != null) {
+        if (whichColor != piece.getType()) {
+          result = new MoveResult(MoveType.NONE);
+          log.info("zly kolor");
+        } else {
+          result = logic.update(newX, newY, x0, y0);
+          log.info("newX: {} | newY: {} | x0: {} | y0: {}", newX, newY, x0, y0);
+          log.info("{}", logic.toString());
+        }
+      } else {
+        result = logic.update(newX, newY, x0, y0);
+        log.info("newX: {} | newY: {} | x0: {} | y0: {}", newX, newY, x0, y0);
+        log.info("{}", logic.toString());
+      }
 
       switch (result.getType()) {
         case NONE:
@@ -204,25 +243,23 @@ public class BoardController {
       Integer blackPieces = 0;
       Integer whitePieces = 0;
 
-      for(Tile[] row : board){
-        for(Tile tile : row){
-          if(tile != null && tile.hasPiece() && tile.getPiece().getType().equals(PieceType.BLACK)){
+      for (Tile[] row : board) {
+        for (Tile tile : row) {
+          if (tile != null && tile.hasPiece() && tile.getPiece().getType().equals(PieceType.BLACK)) {
             blackPieces++;
-          }
-          else if(tile != null && tile.hasPiece() && tile.getPiece().getType().equals(PieceType.WHITE)){
+          } else if (tile != null && tile.hasPiece() && tile.getPiece().getType().equals(PieceType.WHITE)) {
             whitePieces++;
           }
         }
       }
 
-      if(blackPieces.equals(0)){
+      if (blackPieces.equals(0)) {
         log.info("GAME OVER - White wins");
         stackPane.getChildren().clear();
         stackPane.getChildren().add(whiteWin);
         stackPane.getChildren().add(startButton);
         whiteWin.setVisible(true);
-      }
-      else if(whitePieces.equals(0)){
+      } else if (whitePieces.equals(0)) {
         log.info("GAME OVER - Black wins");
         stackPane.getChildren().clear();
         stackPane.getChildren().add(blackWin);
@@ -235,15 +272,14 @@ public class BoardController {
     return piece;
   }
 
-  private void movePiece(){
-    Move move = bQM.poll();
+  private void movePiece(Move move) throws InterruptedException {
     Piece piece = board[move.getSrcX()][move.getSrcY()].getPiece();
     int x0 = move.getSrcX();
     int y0 = move.getSrcY();
     int newX = move.getDstX();
     int newY = move.getDstY();
     MoveResult result = logic.update(newX, newY, x0, y0);
-
+    log.info("wykonuje ruch: " + move.toString());
     switch (result.getType()) {
       case NONE:
         piece.abortMove();
@@ -274,25 +310,23 @@ public class BoardController {
     Integer blackPieces = 0;
     Integer whitePieces = 0;
 
-    for(Tile[] row : board){
-      for(Tile tile : row){
-        if(tile != null && tile.hasPiece() && tile.getPiece().getType().equals(PieceType.BLACK)){
+    for (Tile[] row : board) {
+      for (Tile tile : row) {
+        if (tile != null && tile.hasPiece() && tile.getPiece().getType().equals(PieceType.BLACK)) {
           blackPieces++;
-        }
-        else if(tile != null && tile.hasPiece() && tile.getPiece().getType().equals(PieceType.WHITE)){
+        } else if (tile != null && tile.hasPiece() && tile.getPiece().getType().equals(PieceType.WHITE)) {
           whitePieces++;
         }
       }
     }
 
-    if(blackPieces.equals(0)){
+    if (blackPieces.equals(0)) {
       log.info("GAME OVER - White wins");
       stackPane.getChildren().clear();
       stackPane.getChildren().add(whiteWin);
       stackPane.getChildren().add(startButton);
       whiteWin.setVisible(true);
-    }
-    else if(whitePieces.equals(0)){
+    } else if (whitePieces.equals(0)) {
       log.info("GAME OVER - Black wins");
       stackPane.getChildren().clear();
       stackPane.getChildren().add(blackWin);
@@ -302,18 +336,18 @@ public class BoardController {
   }
 
   private int toBoard(double pixel) {
-    return (int)(pixel + TILE_SIZE / 2) / TILE_SIZE;
+    return (int) (pixel + TILE_SIZE / 2) / TILE_SIZE;
   }
 
-  public void switchLanguageToEnglish(){
+  public void switchLanguageToEnglish() {
     setLanguage("en_US");
   }
 
-  public void switchLanguageToPolish(){
+  public void switchLanguageToPolish() {
     setLanguage("pl_PL");
   }
 
-  private void setLanguage(String lang){
+  private void setLanguage(String lang) {
     locale = new Locale(lang);
     bundle = ResourceBundle.getBundle("translations", locale);
     game.setText(bundle.getString("game"));
@@ -332,7 +366,7 @@ public class BoardController {
   public void showCreators() throws IOException {
     Stage stage = new Stage();
     Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("CreatorsView.fxml"));
-    stage.setScene(new Scene(root,600,400));
+    stage.setScene(new Scene(root, 600, 400));
     stage.getIcons().add(new Image(ICON_URL));
     stage.show();
   }
@@ -340,12 +374,12 @@ public class BoardController {
   public void showRules() throws IOException {
     Stage stage = new Stage();
     Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("RulesView.fxml"));
-    stage.setScene(new Scene(root,800,600));
+    stage.setScene(new Scene(root, 800, 600));
     stage.getIcons().add(new Image(ICON_URL));
     stage.show();
   }
 
-  public void closeWindow(){
+  public void closeWindow() {
     Stage stage = (Stage) startButton.getScene().getWindow();
     stage.close();
   }

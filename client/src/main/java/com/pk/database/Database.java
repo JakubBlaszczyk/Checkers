@@ -15,7 +15,7 @@ import java.util.List;
 public class Database implements DatabaseAccess {
 
   public static final String DRIVER = "org.sqlite.JDBC";
-  public static final String DB_URL = "jdbc:sqlite:./client/target/";
+  public static final String DB_URL = "jdbc:sqlite:./";
 
   private Connection conn;
   private Statement stat;

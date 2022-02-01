@@ -163,6 +163,7 @@ public class MainMenuController {
         FXMLLoader.load(getClass().getClassLoader().getResource("BoardView.fxml"), bundle);
     stage.getIcons().add(new Image(ICON_URL));
     stage.setScene(new Scene(root, 800, 825));
+    stage.setTitle(username.getText());
     oldStage.close();
     stage.show();
   }
@@ -236,6 +237,7 @@ public class MainMenuController {
 
   public void generateCode() throws ExecutionException, InterruptedException, IOException {
     initializeServer(localIP.getText(), 6969, username.getText());
+    ServerDetails.setUsername(username.getText());
     String code = wts.getInviteCode().get();
     inviteCode.setText(code);
     inviteCode.setVisible(true);
@@ -253,8 +255,9 @@ public class MainMenuController {
     }
     Invite inv = (Invite) bQI.poll();
     wts.acceptInvitation(inv.getCode());
+    TimeUnit.SECONDS.sleep(2);
+    wts.chatSendMsg(username.getText());
     wts.chatSendMsg("my turn");
-    TimeUnit.SECONDS.sleep(1);
     ServerDetails.setWts(wts);
     ServerDetails.setbQI(bQI);
     ServerDetails.setbQM(bQM);
@@ -293,7 +296,14 @@ public class MainMenuController {
     log.info("Got active players: {}", wts.getActivePlayers().get());
     TimeUnit.SECONDS.sleep(1);
     wts.invite(codeInput.getText()).get();
+    TimeUnit.SECONDS.sleep(2);
+    wts.chatSendMsg(username.getText());
     wts.chatSendMsg("your turn");
+    ServerDetails.setUsername(username.getText());
+    ServerDetails.setWts(wts);
+    ServerDetails.setbQI(bQI);
+    ServerDetails.setbQM(bQM);
+    ServerDetails.setbQS(bQS);
     showBoard();
   }
 
@@ -303,7 +313,7 @@ public class MainMenuController {
     history.setVisible(false);
     exit.setVisible(false);
 
-    database = new Database("CheckersDatabase.db");
+    database = new Database("client/target/CheckersDatabase.db");
     List<Game> game = database.selectFromGame();
     ListView<String> gamesList = new ListView<>();
     ArrayList<String> list = new ArrayList<>();

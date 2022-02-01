@@ -14,6 +14,16 @@ public class ServerDetails {
 
   private static BlockingQueue<Invite> bQI;
 
+  private static String username;
+
+  public static String getUsername() {
+    return username;
+  }
+
+  public static void setUsername(String username) {
+    ServerDetails.username = username;
+  }
+
   public static WebTcpClient getWts() {
     return wts;
   }
