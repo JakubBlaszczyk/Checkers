@@ -254,7 +254,10 @@ public class ImprovedLogic implements Logic {
   }
 
   private Boolean canChangeToKingPiece() {
-    if (this.oldPiece.isBlack() && !this.oldPiece.isKing()) {
+    if (this.oldPiece.isKing()) {
+      return false;
+    }
+    if (this.oldPiece.isBlack() ) {
       if (this.newY == this.board.size() - 1) {
         return true;
       }
