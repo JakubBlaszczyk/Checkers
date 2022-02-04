@@ -304,6 +304,11 @@ public class BoardController {
         board[x0][y0].setPiece(null);
         board[newX][newY].setPiece(piece);
         database.insertIntoMapHistory(gameId, x0, y0, newX, newY);
+        if (!piece.isQueen) {
+          if ((newY == 0 && piece.getType().equals(PieceType.WHITE)) || (newY == 7 && piece.getType().equals(PieceType.BLACK))) {
+            piece.makeQueen();
+          }
+        }
         break;
       case KILL:
         piece.move(newX, newY);
@@ -316,6 +321,11 @@ public class BoardController {
         pieceGroup.getChildren().remove(board[indices.getX()][indices.getY()].getPiece());
         board[indices.getX()][indices.getY()].setPiece(null);
         database.insertIntoMapHistory(gameId, x0, y0, newX, newY);
+        if (!piece.isQueen) {
+          if ((newY == 0 && piece.getType().equals(PieceType.WHITE)) || (newY == 7 && piece.getType().equals(PieceType.BLACK))) {
+            piece.makeQueen();
+          }
+        }
         break;
       case MANDATORY_KILL:
         piece.abortMove();
