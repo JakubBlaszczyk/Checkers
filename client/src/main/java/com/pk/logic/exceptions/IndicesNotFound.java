@@ -1,8 +1,7 @@
 package com.pk.logic.exceptions;
 
 public class IndicesNotFound extends RuntimeException {
-  public IndicesNotFound() {
-  }
+  public IndicesNotFound() {}
 
   public IndicesNotFound(String errorMessage) {
     super(errorMessage);

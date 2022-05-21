@@ -1,5 +1,6 @@
 package com.pk;
 
+import com.pk.models.Player;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -8,9 +9,6 @@ import java.net.SocketTimeoutException;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
-
-import com.pk.models.Player;
-
 import lombok.AllArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -84,25 +82,25 @@ public class SessionHandler implements Runnable {
 
   private boolean trySocket(InputStream in, OutputStream out, byte[] buf) {
     // while (true) {
-      try {
-        int len = in.read(buf);
-        log.info("Got msg len: {}", len);
-        // Connection closed, send termination msg
-        if (len == 0) {
-          log.info("trySocket failed");
-          out.write("ERROR".getBytes(), 0, "ERROR".length());
-          return false;
-        }
-        log.info("Msg: {}", new String(buf, 0, len));
-        out.write(buf, 0, len);
-        return true;
-      } catch (SocketTimeoutException ignore) {
-        log.trace("trySocket timeout");
-        return true;
-      } catch (Exception e) {
-        log.error("trySocket error, {}", e);
+    try {
+      int len = in.read(buf);
+      log.info("Got msg len: {}", len);
+      // Connection closed, send termination msg
+      if (len == 0) {
+        log.info("trySocket failed");
+        out.write("ERROR".getBytes(), 0, "ERROR".length());
         return false;
       }
+      log.info("Msg: {}", new String(buf, 0, len));
+      out.write(buf, 0, len);
+      return true;
+    } catch (SocketTimeoutException ignore) {
+      log.trace("trySocket timeout");
+      return true;
+    } catch (Exception e) {
+      log.error("trySocket error, {}", e);
+      return false;
+    }
     // }
   }
 }

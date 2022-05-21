@@ -1,7 +1,6 @@
 package com.pk.frontend.checkers;
 
 import com.pk.logic.Indices;
-
 import lombok.Value;
 
 @Value

@@ -11,6 +11,11 @@ import com.pk.logic.ImprovedLogic;
 import com.pk.logic.Indices;
 import com.pk.logic.Logic;
 import com.pk.logic.exceptions.IllegalArgument;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.concurrent.BlockingQueue;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
@@ -32,12 +37,6 @@ import javafx.util.Duration;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.concurrent.BlockingQueue;
-
 @Slf4j
 public class BoardController {
   public static final String ICON_URL = "https://i.ibb.co/yNH0t4d/icon.png";
@@ -53,53 +52,30 @@ public class BoardController {
   private Locale locale;
   private ResourceBundle bundle;
 
-  @FXML
-  private StackPane stackPane;
-  @FXML
-  private Menu game;
-  @FXML
-  private MenuItem returnToMenu;
-  @FXML
-  private MenuItem leaveGame;
-  @FXML
-  private Menu help;
-  @FXML
-  private MenuItem rules;
-  @FXML
-  private MenuItem creators;
-  @FXML
-  private Menu language;
-  @FXML
-  private MenuItem polish;
-  @FXML
-  private MenuItem english;
-  @FXML
-  private Button startButton;
-  @FXML
-  private Label whiteWin;
-  @FXML
-  private Label blackWin;
-  @FXML
-  private Button returnToMenuButton;
+  @FXML private StackPane stackPane;
+  @FXML private Menu game;
+  @FXML private MenuItem returnToMenu;
+  @FXML private MenuItem leaveGame;
+  @FXML private Menu help;
+  @FXML private MenuItem rules;
+  @FXML private MenuItem creators;
+  @FXML private Menu language;
+  @FXML private MenuItem polish;
+  @FXML private MenuItem english;
+  @FXML private Button startButton;
+  @FXML private Label whiteWin;
+  @FXML private Label blackWin;
+  @FXML private Button returnToMenuButton;
 
   private Logic logic;
-
   private Database database;
-
   private WebTcpClient wts;
-
   private BlockingQueue<String> bQS;
-
   private BlockingQueue<Move> bQM;
-
   private BlockingQueue<Invite> bQI;
-
   private Integer gameId;
-
   private String oponentUsername;
-
   private PieceType whichColor;
-
 
   @FXML
   public void initialize() throws IOException, InterruptedException {
@@ -116,23 +92,28 @@ public class BoardController {
         whichColor = PieceType.WHITE;
         log.info("jestem biały");
       }
-      Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), new EventHandler<ActionEvent>() {
-        @SneakyThrows
-        @Override
-        public void handle(ActionEvent actionEvent) {
-          Move move = bQM.poll();
-          if (move != null) {
-            log.info("mam ruch");
-            movePiece(move);
-          }
-        }
-      }));
+      Timeline timeline =
+          new Timeline(
+              new KeyFrame(
+                  Duration.seconds(1),
+                  new EventHandler<ActionEvent>() {
+                    @SneakyThrows
+                    @Override
+                    public void handle(ActionEvent actionEvent) {
+                      Move move = bQM.poll();
+                      if (move != null) {
+                        log.info("mam ruch");
+                        movePiece(move);
+                      }
+                    }
+                  }));
       timeline.setCycleCount(Timeline.INDEFINITE);
       timeline.play();
     }
   }
 
-  public void createContent(ActionEvent actionEvent) throws IllegalArgument, SQLException, InterruptedException {
+  public void createContent(ActionEvent actionEvent)
+      throws IllegalArgument, SQLException, InterruptedException {
     logic = new ImprovedLogic(HEIGHT, 3);
     database = new Database("client/target/CheckersDatabase.db");
     if (wts != null) {
@@ -169,120 +150,125 @@ public class BoardController {
       }
     }
     stackPane.getChildren().add(root);
-
   }
 
   private Piece makePiece(PieceType type, int x, int y) {
     Piece piece = new Piece(type, x, y);
 
-    piece.setOnMouseReleased(e -> {
-      int newX = toBoard(piece.getLayoutX());
-      int newY = toBoard(piece.getLayoutY());
-      MoveResult result;
+    piece.setOnMouseReleased(
+        e -> {
+          int newX = toBoard(piece.getLayoutX());
+          int newY = toBoard(piece.getLayoutY());
+          MoveResult result;
 
-      int x0 = toBoard(piece.getOldX());
-      int y0 = toBoard(piece.getOldY());
+          int x0 = toBoard(piece.getOldX());
+          int y0 = toBoard(piece.getOldY());
 
-      if (whichColor != null) {
-        if (whichColor != piece.getType()) {
-          result = new MoveResult(MoveType.NONE);
-          log.info("zly kolor");
-        } else {
-          result = logic.update(newX, newY, x0, y0);
-          log.info("newX: {} | newY: {} | x0: {} | y0: {}", newX, newY, x0, y0);
-          log.info("{}", logic.toString());
-        }
-      } else {
-        result = logic.update(newX, newY, x0, y0);
-        log.info("newX: {} | newY: {} | x0: {} | y0: {}", newX, newY, x0, y0);
-        log.info("{}", logic.toString());
-      }
+          if (whichColor != null) {
+            if (whichColor != piece.getType()) {
+              result = new MoveResult(MoveType.NONE);
+              log.info("zly kolor");
+            } else {
+              result = logic.update(newX, newY, x0, y0);
+              log.info("newX: {} | newY: {} | x0: {} | y0: {}", newX, newY, x0, y0);
+              log.info("{}", logic.toString());
+            }
+          } else {
+            result = logic.update(newX, newY, x0, y0);
+            log.info("newX: {} | newY: {} | x0: {} | y0: {}", newX, newY, x0, y0);
+            log.info("{}", logic.toString());
+          }
 
-      switch (result.getType()) {
-        case NONE:
-          piece.abortMove();
-          break;
-        case NORMAL:
-          piece.move(newX, newY);
-          board[x0][y0].setPiece(null);
-          board[newX][newY].setPiece(piece);
-          database.insertIntoMapHistory(gameId, x0, y0, newX, newY);
-          if (wts != null) {
-            try {
-              wts.move(new Move(x0, y0, newX, newY));
-            } catch (IOException ex) {
-              ex.printStackTrace();
-            } catch (MoveRejected ex) {
-              ex.printStackTrace();
+          switch (result.getType()) {
+            case NONE:
+              piece.abortMove();
+              break;
+            case NORMAL:
+              piece.move(newX, newY);
+              board[x0][y0].setPiece(null);
+              board[newX][newY].setPiece(piece);
+              database.insertIntoMapHistory(gameId, x0, y0, newX, newY);
+              if (wts != null) {
+                try {
+                  wts.move(new Move(x0, y0, newX, newY));
+                } catch (IOException ex) {
+                  ex.printStackTrace();
+                } catch (MoveRejected ex) {
+                  ex.printStackTrace();
+                }
+              }
+              if (!piece.isQueen) {
+                if ((newY == 0 && piece.getType().equals(PieceType.WHITE))
+                    || (newY == 7 && piece.getType().equals(PieceType.BLACK))) {
+                  piece.makeQueen();
+                }
+              }
+              break;
+            case KILL:
+              piece.move(newX, newY);
+              board[x0][y0].setPiece(null);
+              board[newX][newY].setPiece(piece);
+
+              Indices indices = result.getIndices();
+              log.info("indiX: {} | indiY: {}", indices.getX(), indices.getY());
+              log.info("board: ", board[indices.getX()][indices.getY()].getPiece());
+              pieceGroup.getChildren().remove(board[indices.getX()][indices.getY()].getPiece());
+              board[indices.getX()][indices.getY()].setPiece(null);
+              database.insertIntoMapHistory(gameId, x0, y0, newX, newY);
+              if (wts != null) {
+                try {
+                  wts.move(new Move(x0, y0, newX, newY));
+                } catch (IOException ex) {
+                  ex.printStackTrace();
+                } catch (MoveRejected ex) {
+                  ex.printStackTrace();
+                }
+              }
+              if (!piece.isQueen) {
+                if ((newY == 0 && piece.getType().equals(PieceType.WHITE))
+                    || (newY == 7 && piece.getType().equals(PieceType.BLACK))) {
+                  piece.makeQueen();
+                }
+              }
+              break;
+            case MANDATORY_KILL:
+              piece.abortMove();
+              break;
+          }
+
+          Integer blackPieces = 0;
+          Integer whitePieces = 0;
+
+          for (Tile[] row : board) {
+            for (Tile tile : row) {
+              if (tile != null
+                  && tile.hasPiece()
+                  && tile.getPiece().getType().equals(PieceType.BLACK)) {
+                blackPieces++;
+              } else if (tile != null
+                  && tile.hasPiece()
+                  && tile.getPiece().getType().equals(PieceType.WHITE)) {
+                whitePieces++;
+              }
             }
           }
-          if (!piece.isQueen) {
-            if ((newY == 0 && piece.getType().equals(PieceType.WHITE)) || (newY == 7 && piece.getType().equals(PieceType.BLACK))) {
-              piece.makeQueen();
-            }
+
+          if (blackPieces.equals(0)) {
+            log.info("GAME OVER - White wins");
+            stackPane.getChildren().clear();
+            stackPane.getChildren().add(whiteWin);
+            stackPane.getChildren().add(returnToMenuButton);
+            returnToMenuButton.setVisible(true);
+            whiteWin.setVisible(true);
+          } else if (whitePieces.equals(0)) {
+            log.info("GAME OVER - Black wins");
+            stackPane.getChildren().clear();
+            stackPane.getChildren().add(blackWin);
+            stackPane.getChildren().add(returnToMenuButton);
+            returnToMenuButton.setVisible(true);
+            blackWin.setVisible(true);
           }
-          break;
-        case KILL:
-          piece.move(newX, newY);
-          board[x0][y0].setPiece(null);
-          board[newX][newY].setPiece(piece);
-
-          Indices indices = result.getIndices();
-          log.info("indiX: {} | indiY: {}", indices.getX(), indices.getY());
-          log.info("board: ", board[indices.getX()][indices.getY()].getPiece());
-          pieceGroup.getChildren().remove(board[indices.getX()][indices.getY()].getPiece());
-          board[indices.getX()][indices.getY()].setPiece(null);
-          database.insertIntoMapHistory(gameId, x0, y0, newX, newY);
-          if (wts != null) {
-            try {
-              wts.move(new Move(x0, y0, newX, newY));
-            } catch (IOException ex) {
-              ex.printStackTrace();
-            } catch (MoveRejected ex) {
-              ex.printStackTrace();
-            }
-          }
-          if (!piece.isQueen) {
-            if ((newY == 0 && piece.getType().equals(PieceType.WHITE)) || (newY == 7 && piece.getType().equals(PieceType.BLACK))) {
-              piece.makeQueen();
-            }
-          }
-          break;
-        case MANDATORY_KILL:
-          piece.abortMove();
-          break;
-      }
-
-      Integer blackPieces = 0;
-      Integer whitePieces = 0;
-
-      for (Tile[] row : board) {
-        for (Tile tile : row) {
-          if (tile != null && tile.hasPiece() && tile.getPiece().getType().equals(PieceType.BLACK)) {
-            blackPieces++;
-          } else if (tile != null && tile.hasPiece() && tile.getPiece().getType().equals(PieceType.WHITE)) {
-            whitePieces++;
-          }
-        }
-      }
-
-      if (blackPieces.equals(0)) {
-        log.info("GAME OVER - White wins");
-        stackPane.getChildren().clear();
-        stackPane.getChildren().add(whiteWin);
-        stackPane.getChildren().add(returnToMenuButton);
-        returnToMenuButton.setVisible(true);
-        whiteWin.setVisible(true);
-      } else if (whitePieces.equals(0)) {
-        log.info("GAME OVER - Black wins");
-        stackPane.getChildren().clear();
-        stackPane.getChildren().add(blackWin);
-        stackPane.getChildren().add(returnToMenuButton);
-        returnToMenuButton.setVisible(true);
-        blackWin.setVisible(true);
-      }
-    });
-
+        });
 
     return piece;
   }
@@ -305,7 +291,8 @@ public class BoardController {
         board[newX][newY].setPiece(piece);
         database.insertIntoMapHistory(gameId, x0, y0, newX, newY);
         if (!piece.isQueen) {
-          if ((newY == 0 && piece.getType().equals(PieceType.WHITE)) || (newY == 7 && piece.getType().equals(PieceType.BLACK))) {
+          if ((newY == 0 && piece.getType().equals(PieceType.WHITE))
+              || (newY == 7 && piece.getType().equals(PieceType.BLACK))) {
             piece.makeQueen();
           }
         }
@@ -322,7 +309,8 @@ public class BoardController {
         board[indices.getX()][indices.getY()].setPiece(null);
         database.insertIntoMapHistory(gameId, x0, y0, newX, newY);
         if (!piece.isQueen) {
-          if ((newY == 0 && piece.getType().equals(PieceType.WHITE)) || (newY == 7 && piece.getType().equals(PieceType.BLACK))) {
+          if ((newY == 0 && piece.getType().equals(PieceType.WHITE))
+              || (newY == 7 && piece.getType().equals(PieceType.BLACK))) {
             piece.makeQueen();
           }
         }
@@ -339,7 +327,9 @@ public class BoardController {
       for (Tile tile : row) {
         if (tile != null && tile.hasPiece() && tile.getPiece().getType().equals(PieceType.BLACK)) {
           blackPieces++;
-        } else if (tile != null && tile.hasPiece() && tile.getPiece().getType().equals(PieceType.WHITE)) {
+        } else if (tile != null
+            && tile.hasPiece()
+            && tile.getPiece().getType().equals(PieceType.WHITE)) {
           whitePieces++;
         }
       }
@@ -417,7 +407,8 @@ public class BoardController {
     Stage stage = new Stage();
     locale = new Locale("pl_PL");
     bundle = ResourceBundle.getBundle("translations", locale);
-    Parent root = FXMLLoader.load(getClass().getClassLoader().getResource("MainMenuView.fxml"), bundle);
+    Parent root =
+        FXMLLoader.load(getClass().getClassLoader().getResource("MainMenuView.fxml"), bundle);
     stage.setTitle("Checkers");
     stage.getIcons().add(new Image(ICON_URL));
     stage.setScene(new Scene(root, 800, 800));

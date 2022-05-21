@@ -1,13 +1,11 @@
 package com.pk.logic;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.pk.frontend.checkers.MoveResult;
 import com.pk.frontend.checkers.MoveType;
 import com.pk.logic.exceptions.IllegalArgument;
 import com.pk.logic.exceptions.IndicesNotFound;
-
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -55,7 +53,8 @@ public class ImprovedLogic implements Logic {
     log.debug("validateRanges(x) {}", validateRanges(newX), newX);
     log.debug("validateRanges(y) {}", validateRanges(newY));
     log.debug("validateTurn() {} actualPiece {}", validateTurn(), this.oldPiece);
-    if (Boolean.FALSE.equals(validateRanges(newX)) || Boolean.FALSE.equals(validateRanges(newY))
+    if (Boolean.FALSE.equals(validateRanges(newX))
+        || Boolean.FALSE.equals(validateRanges(newY))
         || Boolean.FALSE.equals(validateTurn())) {
       return new MoveResult(MoveType.NONE);
     }
@@ -69,7 +68,9 @@ public class ImprovedLogic implements Logic {
     log.debug("validateDistance() {}", validateDistance(distance));
     log.debug("validateDirection() {}", validateDirection());
     log.debug("validateTilesInBetween() {}", validateTilesInBetween(distance));
-    if ((!validateDistance(distance) || !validateDirection() || !validateTilesInBetween(distance))) {
+    if ((!validateDistance(distance)
+        || !validateDirection()
+        || !validateTilesInBetween(distance))) {
       return new MoveResult(MoveType.NONE);
     }
     updateKillMove(checkForKillMoves(this.turn));
@@ -204,22 +205,33 @@ public class ImprovedLogic implements Logic {
     return this.oldPiece.compareColors(this.turn);
   }
 
-  private Boolean validateOneTileForOppositeColor(Integer x, Integer y, LogicTile piece, Integer offset, Direction dirX,
-      Direction dirY) {
-    log.trace("Opposite Y {} X {} offset {}", (y + (offset * dirY.getDirection())),
-        (x + (offset * dirX.getDirection())), offset);
+  private Boolean validateOneTileForOppositeColor(
+      Integer x, Integer y, LogicTile piece, Integer offset, Direction dirX, Direction dirY) {
+    log.trace(
+        "Opposite Y {} X {} offset {}",
+        (y + (offset * dirY.getDirection())),
+        (x + (offset * dirX.getDirection())),
+        offset);
     return (validateRanges(x + (offset * dirX.getDirection()))
         && validateRanges(y + (offset * dirY.getDirection()))
-        && this.board.get(x + (offset * dirX.getDirection())).get(y + (offset * dirY.getDirection()))
+        && this.board
+            .get(x + (offset * dirX.getDirection()))
+            .get(y + (offset * dirY.getDirection()))
             .isOppositeColor(piece));
   }
 
-  private Boolean validateOneTileForEmpty(Integer x, Integer y, Integer offset, Direction dirX, Direction dirY) {
-    log.trace("Empty Y {} X {} offset {}", (y + (offset * dirY.getDirection())),
-        (x + (offset * dirX.getDirection())), offset);
+  private Boolean validateOneTileForEmpty(
+      Integer x, Integer y, Integer offset, Direction dirX, Direction dirY) {
+    log.trace(
+        "Empty Y {} X {} offset {}",
+        (y + (offset * dirY.getDirection())),
+        (x + (offset * dirX.getDirection())),
+        offset);
     return (validateRanges(x + (offset * dirX.getDirection()))
         && validateRanges(y + (offset * dirY.getDirection()))
-        && this.board.get(x + (offset * dirX.getDirection())).get(y + (offset * dirY.getDirection()))
+        && this.board
+            .get(x + (offset * dirX.getDirection()))
+            .get(y + (offset * dirY.getDirection()))
             .isEmpty());
   }
 
@@ -229,22 +241,25 @@ public class ImprovedLogic implements Logic {
   }
 
   private Boolean canPawnKill(Integer x, Integer y, LogicTile piece) {
-    return (validateOneTileForOppositeColor(x, y, piece, 1, Direction.LEFT,
-        Direction.toDirection(this.oldPiece.getColor()))
-        && validateOneTileForEmpty(x, y, 2, Direction.LEFT, Direction.toDirection(this.oldPiece.getColor())))
-        || (validateOneTileForOppositeColor(x, y, piece, 1, Direction.RIGHT,
-            Direction.toDirection(this.oldPiece.getColor()))
-            && validateOneTileForEmpty(x, y, 2, Direction.RIGHT, Direction.toDirection(this.oldPiece.getColor())));
+    return (validateOneTileForOppositeColor(
+                x, y, piece, 1, Direction.LEFT, Direction.toDirection(this.oldPiece.getColor()))
+            && validateOneTileForEmpty(
+                x, y, 2, Direction.LEFT, Direction.toDirection(this.oldPiece.getColor())))
+        || (validateOneTileForOppositeColor(
+                x, y, piece, 1, Direction.RIGHT, Direction.toDirection(this.oldPiece.getColor()))
+            && validateOneTileForEmpty(
+                x, y, 2, Direction.RIGHT, Direction.toDirection(this.oldPiece.getColor())));
   }
 
   private Boolean canKingKill(Integer x, Integer y, LogicTile piece) {
-    return canKingKillDeepSearch(x, y, piece, Direction.LEFT, Direction.UP) ||
-        canKingKillDeepSearch(x, y, piece, Direction.LEFT, Direction.DOWN) ||
-        canKingKillDeepSearch(x, y, piece, Direction.RIGHT, Direction.DOWN) ||
-        canKingKillDeepSearch(x, y, piece, Direction.RIGHT, Direction.UP);
+    return canKingKillDeepSearch(x, y, piece, Direction.LEFT, Direction.UP)
+        || canKingKillDeepSearch(x, y, piece, Direction.LEFT, Direction.DOWN)
+        || canKingKillDeepSearch(x, y, piece, Direction.RIGHT, Direction.DOWN)
+        || canKingKillDeepSearch(x, y, piece, Direction.RIGHT, Direction.UP);
   }
 
-  private Boolean canKingKillDeepSearch(Integer x, Integer y, LogicTile piece, Direction dirX, Direction dirY) {
+  private Boolean canKingKillDeepSearch(
+      Integer x, Integer y, LogicTile piece, Direction dirX, Direction dirY) {
     Integer i = 1;
     while (i < this.board.size() && validateOneTileForEmpty(x, y, i, dirX, dirY)) {
       ++i;
@@ -257,7 +272,7 @@ public class ImprovedLogic implements Logic {
     if (this.oldPiece.isKing()) {
       return false;
     }
-    if (this.oldPiece.isBlack() ) {
+    if (this.oldPiece.isBlack()) {
       if (this.newY == this.board.size() - 1) {
         return true;
       }

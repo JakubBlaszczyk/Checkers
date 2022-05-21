@@ -3,7 +3,10 @@ package com.pk.logic;
 import com.pk.logic.exceptions.InvalidDirection;
 
 public enum Direction {
-  UP(1), DOWN(-1), LEFT(-1), RIGHT(1);
+  UP(1),
+  DOWN(-1),
+  LEFT(-1),
+  RIGHT(1);
 
   private Direction(Integer direction) {
     this.value = direction;
@@ -28,7 +31,7 @@ public enum Direction {
     }
   }
 
-  static public Direction toDirection(Integer value) {
+  public static Direction toDirection(Integer value) {
     return value < 0 ? DOWN : UP;
   }
 
